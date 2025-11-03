@@ -1,0 +1,14 @@
+.venv
+
+.web
+__pycache__
+*.pyc
+
+.git
+.gitignore
+
+.idea
+.vscode
+
+Dockerfile
+compose.yaml

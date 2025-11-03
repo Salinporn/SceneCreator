@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { verifyLoginToken } from '../../utils/Auth';
+const DIGITAL_HOME_PLATFORM_BASE_URL = import.meta.env.VITE_DIGITAL_HOME_PLATFORM_URL;
 
 export function Login() {
   const [searchParams] = useSearchParams();
@@ -124,7 +125,7 @@ export function Login() {
               {message}
             </p>
             <a
-              href="http://localhost:3000"
+              href={DIGITAL_HOME_PLATFORM_BASE_URL}
               style={{
                 display: 'inline-block',
                 padding: '0.75rem 1.5rem',

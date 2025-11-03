@@ -1,0 +1,63 @@
+services:
+  digitalhome_frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: digitalhome-frontend
+    ports:
+      - "3001:3000"
+      - "8091:8091"
+    environment:
+      API_URL: ${API_URL}
+    env_file:
+      - .env
+    networks:
+      - digitalhome-network
+    depends_on:
+      - digitalhome_api
+
+  digitalhome_api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: digitalhome-api
+    ports:
+      - "8002:8000"
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DEBUG: ${DEBUG}
+      DJANGO_LOGLEVEL: ${DJANGO_LOGLEVEL}
+      DATABASE_ENGINE: ${DATABASE_ENGINE}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT}
+    env_file:
+      - .env
+    networks:
+      - digitalhome-network
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgis/postgis:17-3.6-alpine
+    platform: linux/amd64
+    container_name: digitalhome-postgres-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dev
+    ports:
+      - "5555:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - digitalhome-network
+
+volumes:
+  postgres_data:
+
+networks:
+  digitalhome-network:
+    driver: bridge

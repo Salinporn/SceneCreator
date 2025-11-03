@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8001';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export interface AuthResponse {
   logged_in: boolean;
@@ -27,6 +27,9 @@ export async function verifyLoginToken(token: string): Promise<LoginTokenRespons
     if (response.ok) {
       const data: LoginTokenResponse = await response.json();
       console.log('✅ Token verified, logged in as:', data.username);
+
+      const cookies = document.cookie;
+      console.log(cookies);
       
       // Store user info in localStorage
       localStorage.setItem('username', data.username);

@@ -1,0 +1,24 @@
+services:
+  digitalhome_vite:
+    build:
+      context: ./SCENECREATOR
+      dockerfile: Dockerfile
+      container_name: digitalhome-scenecreator 
+    container_name: digitalhome-vite
+    ports:
+      - "3002:80"
+    environment:
+      API_URL: ${API_URL}
+    env_file:
+      - .env
+    networks:
+      - digitalhome-network
+    depends_on:
+      - digitalhome_api
+
+volumes:
+  postgres_data:
+
+networks:
+  digitalhome-network:
+    driver: bridge

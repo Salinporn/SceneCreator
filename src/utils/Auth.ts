@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8001';
+const API_BASE_URL = import.meta.env.API_URL;
 
 export interface AuthResponse {
   logged_in: boolean;

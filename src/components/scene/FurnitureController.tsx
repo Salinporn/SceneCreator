@@ -4,6 +4,16 @@ import { ThreeEvent, useThree, useFrame } from "@react-three/fiber";
 import { useXR } from "@react-three/xr";
 import { useGLTF } from "@react-three/drei";
 import { PlacedItem } from "../types/Furniture";
+import { collisionDetector } from "../../utils/CollisionDetection";
+
+interface DraggableFurnitureProps {
+  item: PlacedItem;
+  isSelected: boolean;
+  onSelect: () => void;
+  onPositionChange: (newPosition: [number, number, number]) => void;
+  onRotationChange: (newRotation: [number, number, number]) => void;
+  onCollisionDetected?: (hasCollision: boolean) => void;
+}
 
 function DraggableFurniture({
   item,
@@ -11,40 +21,31 @@ function DraggableFurniture({
   onSelect,
   onPositionChange,
   onRotationChange,
-}: {
-  item: PlacedItem;
-  isSelected: boolean;
-  onSelect: () => void;
-  onPositionChange: (newPosition: [number, number, number]) => void;
-  onRotationChange: (newRotation: [number, number, number]) => void;
-}) {
+  onCollisionDetected,
+}: DraggableFurnitureProps) {
   const groupRef = React.useRef<THREE.Group>(null);
   const modelRef = React.useRef<THREE.Group>(null);
   const xr = useXR();
   const camera = useThree((state) => state.camera);
   const isPresenting = !!xr.session;
+  const [hasCollision, setHasCollision] = React.useState(false);
   const [_modelHeight, setModelHeight] = React.useState(0);
 
   const { scene } = item.modelPath ? useGLTF(item.modelPath) : { scene: null };
 
+  // Initialize model and collision detection
   React.useEffect(() => {
     if (!modelRef.current || !scene) return;
 
-    // Clone the scene
     const clonedScene = scene.clone();
-    
-    // Clear existing children
     modelRef.current.clear();
     
-    // Calculate bounding box
     const box = new THREE.Box3().setFromObject(clonedScene);
     const minY = box.min.y;
     const height = box.max.y - box.min.y;
     
     setModelHeight(-minY);
-    
     clonedScene.position.y = -minY;
-    
     modelRef.current.add(clonedScene);
     
     console.log('🪑 Furniture aligned:', {
@@ -54,6 +55,34 @@ function DraggableFurniture({
       adjustment: -minY
     });
   }, [scene, item.modelPath]);
+
+  // Update collision detection when position changes
+  React.useEffect(() => {
+    if (!groupRef.current) return;
+    
+    const itemId = `${item.id}`;
+    collisionDetector.updateFurnitureBox(itemId, groupRef.current);
+    
+    // Check for collisions
+    const collision = collisionDetector.checkAllCollisions(itemId);
+    setHasCollision(collision.hasCollision);
+    
+    if (onCollisionDetected) {
+      onCollisionDetected(collision.hasCollision);
+    }
+    
+    if (collision.hasCollision) {
+      console.warn('⚠️ Collision detected for', item.name, ':', collision.collidingObjects);
+    }
+  }, [item.position, item.rotation, item.scale]);
+
+  // Cleanup collision detection on unmount
+  React.useEffect(() => {
+    return () => {
+      const itemId = `${item.id}`;
+      collisionDetector.removeFurniture(itemId);
+    };
+  }, [item.id]);
 
   useFrame((_state, delta) => {
     if (!isSelected || !groupRef.current || !isPresenting) return; 
@@ -89,6 +118,7 @@ function DraggableFurniture({
       }
     }
 
+    // Handle movement with collision detection
     if (moveVector.length() > deadzone) {
       const forward = new THREE.Vector3();
       camera.getWorldDirection(forward);
@@ -104,13 +134,41 @@ function DraggableFurniture({
       deltaPosition.addScaledVector(forward, -moveVector.z * moveSpeed * delta);
       deltaPosition.addScaledVector(right, moveVector.x * moveSpeed * delta);
 
-      const newPosition = new THREE.Vector3().fromArray(item.position);
-      newPosition.add(deltaPosition);
+      const currentPosition = new THREE.Vector3().fromArray(item.position);
+      const newPosition = currentPosition.clone().add(deltaPosition);
+      newPosition.y = 0; // Keep at floor level
+
+      // Check if new position is valid
+      const itemId = `${item.id}`;
+      const tempPosition = groupRef.current.position.clone();
+      groupRef.current.position.copy(newPosition);
+      collisionDetector.updateFurnitureBox(itemId, groupRef.current);
       
-      // Keep Y at 0 (floor level) since the model itself is already aligned
-      onPositionChange([newPosition.x, 0, newPosition.z]);
+      const collision = collisionDetector.checkAllCollisions(itemId);
+      
+      if (!collision.hasCollision) {
+        // Position is valid, update
+        onPositionChange([newPosition.x, 0, newPosition.z]);
+      } else {
+        // Try to find a valid position nearby
+        const validPosition = collisionDetector.findValidPosition(
+          itemId,
+          newPosition,
+          groupRef.current,
+          4
+        );
+        
+        if (validPosition) {
+          onPositionChange([validPosition.x, 0, validPosition.z]);
+        } else {
+          // Revert to original position
+          groupRef.current.position.copy(tempPosition);
+          collisionDetector.updateFurnitureBox(itemId, groupRef.current);
+        }
+      }
     }
 
+    // Handle rotation
     if (Math.abs(rotateDelta) > deadzone) {
       const deltaRotation = rotateDelta * rotateSpeed * delta;
       const currentRotationY = (item.rotation && typeof item.rotation[1] === 'number' && !isNaN(item.rotation[1])) ? item.rotation[1] : 0;
@@ -134,23 +192,54 @@ function DraggableFurniture({
     >
       <group ref={modelRef} />
       
+      {/* Selection indicator */}
       {isSelected && (
         <>
           <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[0.3, 0.35, 32]} />
-            <meshBasicMaterial color="#00ff00" transparent opacity={0.7} side={THREE.DoubleSide} />
+            <meshBasicMaterial 
+              color={hasCollision ? "#ff0000" : "#00ff00"} 
+              transparent 
+              opacity={0.7} 
+              side={THREE.DoubleSide} 
+            />
           </mesh>
           <mesh position={[0, 0.01, 0.35]} rotation={[-Math.PI / 2, 0, 0]}>
             <coneGeometry args={[0.05, 0.1, 8]} />
-            <meshBasicMaterial color="#ffff00" />
+            <meshBasicMaterial color={hasCollision ? "#ff0000" : "#ffff00"} />
           </mesh>
         </>
+      )}
+
+      {/* Collision warning indicator */}
+      {hasCollision && !isSelected && (
+        <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.25, 0.3, 32]} />
+          <meshBasicMaterial 
+            color="#ff6600" 
+            transparent 
+            opacity={0.5} 
+            side={THREE.DoubleSide} 
+          />
+        </mesh>
       )}
     </group>
   );
 }
  
-export function PlacedFurniture({ items, selectedIndex, onSelectItem, onUpdatePosition, onUpdateRotation }: any) {
+export function PlacedFurniture({ 
+  items, 
+  selectedIndex, 
+  onSelectItem, 
+  onUpdatePosition, 
+  onUpdateRotation 
+}: {
+  items: PlacedItem[];
+  selectedIndex: number | null;
+  onSelectItem: (index: number) => void;
+  onUpdatePosition: (index: number, newPosition: [number, number, number]) => void;
+  onUpdateRotation: (index: number, newRotation: [number, number, number]) => void;
+}) {
   return (
     <>
       {items.map((item: PlacedItem, index: number) => (

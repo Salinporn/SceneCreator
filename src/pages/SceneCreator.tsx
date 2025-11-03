@@ -17,7 +17,14 @@ interface DigitalHome {
     positions: any;
     rotation: any;
     scale: any;
-    boundary: any;
+    boundary: {
+      min_x: number;
+      max_x: number;
+      min_y: number;
+      max_y: number;
+      min_z: number;
+      max_z: number;
+    };
   };
   texture_id: number | null;
   created_at: string;
@@ -44,6 +51,7 @@ export function SceneCreator() {
         if (response.ok) {
           const data = await response.json();
           setDigitalHome(data.digital_home);
+          console.log('🏠 Digital home loaded:', data.digital_home);
         } else {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to load digital home');
@@ -120,7 +128,8 @@ export function SceneCreator() {
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       <Canvas style={{ width: "100vw", height: "100vh", position: "fixed" }}>
         <XR store={xrStore}>
-          {homeId && <SceneContent homeId={homeId} />}
+          {/* 🆕 Pass digitalHome data to SceneContent */}
+          {homeId && <SceneContent homeId={homeId} digitalHome={digitalHome} />}
         </XR>
       </Canvas>
 

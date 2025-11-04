@@ -19,7 +19,7 @@ interface DigitalHome {
   updated_at: string;
 }
 
-const REFLEX_APP_URL =  import.meta.env.VITE_DIGITAL_HOME_PLATFORM_URL;
+const REFLEX_APP_URL = import.meta.env.VITE_DIGITAL_HOME_PLATFORM_URL;
 
 export function Home() {
   const navigate = useNavigate();
@@ -36,11 +36,11 @@ export function Home() {
   const loadDigitalHomes = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       console.log('📦 Fetching digital homes...');
       const response = await makeAuthenticatedRequest('/digitalhomes/get_digital_homes/');
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('✅ Digital homes loaded:', data.digital_homes);
@@ -140,32 +140,60 @@ export function Home() {
 
       {/* Main Content */}
       <main style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '2rem',
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '2rem',
+          }}
+        >
           <h2 style={{ fontSize: '1.75rem', margin: 0 }}>Homes</h2>
-          <button
-            onClick={loadDigitalHomes}
-            disabled={loading}
-            style={{
-              padding: '0.5rem 1rem',
-              background: loading ? '#4b5563' : '#3b82f6',
-              border: 'none',
-              borderRadius: '6px',
-              color: 'white',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              fontSize: '0.9rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-            }}
-          >
-            {loading ? '⟳ Loading...' : '↻ Refresh'}
-          </button>
+
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button
+              onClick={loadDigitalHomes}
+              disabled={loading}
+              style={{
+                padding: '0.5rem 1rem',
+                background: loading ? '#4b5563' : '#3b82f6',
+                border: 'none',
+                borderRadius: '6px',
+                color: 'white',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontSize: '0.9rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}
+            >
+              {loading ? '⟳ Loading...' : '↻ Refresh'}
+            </button>
+            
+            <button
+              onClick={() => navigate('/add-model')}
+              style={{
+                padding: '0.5rem 1rem',
+                background: '#22c55e',
+                border: 'none',
+                borderRadius: '6px',
+                color: 'white',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontWeight: 500,
+                transition: 'background 0.2s',
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.background = '#16a34a')}
+              onMouseOut={(e) => (e.currentTarget.style.background = '#22c55e')}
+            >
+              ➕ Add Model
+            </button>
+          </div>
         </div>
+
 
         {/* Loading State */}
         {loading && (
@@ -354,37 +382,12 @@ export function Home() {
               🏠
             </div>
             <h3 style={{
-              fontSize: '1.5rem',
+              fontSize: '1.2rem',
               marginBottom: '0.75rem',
               color: 'white',
             }}>
               No Digital Homes Yet
             </h3>
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.6)',
-              marginBottom: '2rem',
-              maxWidth: '400px',
-            }}>
-              You haven't created any digital homes yet. Go back to the Digital Home Platform to create your first home!
-            </p>
-            <a
-              href={REFLEX_APP_URL}
-              style={{
-                padding: '0.75rem 1.5rem',
-                background: '#3b82f6',
-                border: 'none',
-                borderRadius: '8px',
-                color: 'white',
-                textDecoration: 'none',
-                fontSize: '1rem',
-                fontWeight: '500',
-                transition: 'background 0.2s',
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = '#2563eb'}
-              onMouseOut={(e) => e.currentTarget.style.background = '#3b82f6'}
-            >
-              ← Go to Digital Home Platform
-            </a>
           </div>
         )}
       </main>

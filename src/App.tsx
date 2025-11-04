@@ -4,6 +4,7 @@ import { Home } from './pages/Home';
 import { NotAuthorized } from './pages/auth/NotAuthorized';
 import { SceneCreator } from './pages/SceneCreator';
 import { ProtectedRoute } from './pages/auth/ProtectedRoute';
+import { AddModel } from './pages/AddModel';
 
 function App() {
   return (
@@ -24,6 +25,14 @@ function App() {
           element={
             <ProtectedRoute>
               <SceneCreator />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/add-model"
+          element={
+            <ProtectedRoute>
+              <AddModel />
             </ProtectedRoute>
           }
         />

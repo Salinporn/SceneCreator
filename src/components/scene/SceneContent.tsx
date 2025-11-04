@@ -13,6 +13,8 @@ import { HomeModel } from "./HomeModel";
 import { PlacedFurniture, SpawnManager } from "./FurnitureController";
 import { Furniture, PlacedItem } from "../types/Furniture";
 import { makeAuthenticatedRequest, logout } from "../../utils/Auth";
+
+const DIGITAL_HOME_PLATFORM_BASE_URL = import.meta.env.VITE_DIGITAL_HOME_PLATFORM_URL;
 // Add these imports at the top
 import { collisionDetector } from "../../utils/CollisionDetection";
 import * as THREE from "three";
@@ -352,6 +354,43 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleBackToHome = () => {
+    console.log('🔙 Navigating back to home...');
+    navigate('/');
+  };
+
+  const handleLogout = async () => {
+    console.log('👋 Logging out...');
+    await logout();
+    window.location.href = DIGITAL_HOME_PLATFORM_BASE_URL;
+  };
+
+  const handleSelectFurniture = (f: Furniture) => {
+    console.log("Spawning furniture:", f.name, "at:", currentSpawnPositionRef.current);
+    
+    const modelPath = modelUrlCache.get(f.model_id);
+    if (!modelPath) {
+      console.warn('Model not loaded yet for:', f.name);
+      return;
+    }
+
+    const newItem: PlacedItem = {
+      ...f,
+      modelPath,
+      position: [
+        currentSpawnPositionRef.current[0], 
+        currentSpawnPositionRef.current[1], 
+        currentSpawnPositionRef.current[2]
+      ],
+      rotation: [0, 0, 0],
+      scale: sliderValue,
+    };
+    
+    setPlacedItems([...placedItems, newItem]);
+    setSelectedItemIndex(placedItems.length);
+    setRotationValue(0);
   };
 
   const handleUpdateItemPosition = (index: number, newPosition: [number, number, number]) => {

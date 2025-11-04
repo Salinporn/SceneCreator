@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { Login } from './pages/auth/Login';
 import { Home } from './pages/Home';
 import { NotAuthorized } from './pages/auth/NotAuthorized';
@@ -7,7 +7,7 @@ import { ProtectedRoute } from './pages/auth/ProtectedRoute';
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/unauthorized" element={<NotAuthorized />} />
@@ -28,7 +28,7 @@ function App() {
           }
         />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

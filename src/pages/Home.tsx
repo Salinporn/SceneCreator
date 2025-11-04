@@ -19,7 +19,7 @@ interface DigitalHome {
   updated_at: string;
 }
 
-const REFLEX_APP_URL = 'http://localhost:3000';
+const REFLEX_APP_URL =  import.meta.env.VITE_DIGITAL_HOME_PLATFORM_URL;
 
 export function Home() {
   const navigate = useNavigate();

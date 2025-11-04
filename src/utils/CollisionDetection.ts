@@ -1,10 +1,4 @@
 import * as THREE from 'three';
-
-/**
- * Collision detection utilities for VR scene furniture placement
- * Implements bounding box collision detection between furniture items and room boundaries
- */
-
 export interface CollisionResult {
   hasCollision: boolean;
   collidingObjects: string[];
@@ -29,9 +23,6 @@ export class CollisionDetector {
     return CollisionDetector.instance;
   }
 
-  /**
-   * Enable or disable debug visualization of bounding boxes
-   */
   setDebugMode(enabled: boolean) {
     this.showDebugBoxes = enabled;
     if (!enabled) {
@@ -44,9 +35,6 @@ export class CollisionDetector {
     }
   }
 
-  /**
-   * Initialize room boundaries from spatial data
-   */
   setRoomBoundary(boundary: {
     min_x: number;
     max_x: number;
@@ -64,22 +52,15 @@ export class CollisionDetector {
     console.log('🏠 Room boundary set:', this.roomBox);
   }
 
-  /**
-   * Update or add furniture bounding box
-   */
   updateFurnitureBox(itemId: string, object: THREE.Object3D) {
     const box = new THREE.Box3().setFromObject(object);
     this.furnitureBoxes.set(itemId, box);
 
-    // Create or update debug visualization
     if (this.showDebugBoxes) {
       this.createDebugBox(itemId, box, object.parent);
     }
   }
 
-  /**
-   * Remove furniture from collision detection
-   */
   removeFurniture(itemId: string) {
     this.furnitureBoxes.delete(itemId);
     const helper = this.helperMeshes.get(itemId);
@@ -89,10 +70,6 @@ export class CollisionDetector {
     this.helperMeshes.delete(itemId);
   }
 
-  /**
-   * Check if furniture collides with room boundaries
-   * Note: We allow furniture to sit on the floor, so we don't check Y-axis min collision
-   */
   checkRoomCollision(itemId: string): CollisionResult {
     const box = this.furnitureBoxes.get(itemId);
     
@@ -100,16 +77,13 @@ export class CollisionDetector {
       return { hasCollision: false, collidingObjects: [] };
     }
 
-    // Small tolerance to prevent false positives from floating point precision
     const EPSILON = 0.01;
     
-    // Check X and Z boundaries (walls), but allow furniture to sit on floor
     const isOutsideX = box.min.x < this.roomBox.min.x - EPSILON || 
                        box.max.x > this.roomBox.max.x + EPSILON;
     const isOutsideZ = box.min.z < this.roomBox.min.z - EPSILON || 
                        box.max.z > this.roomBox.max.z + EPSILON;
     
-    // Only check if furniture goes through ceiling, not floor
     const isThroughCeiling = box.max.y > this.roomBox.max.y + EPSILON;
     
     const hasCollision = isOutsideX || isOutsideZ || isThroughCeiling;
@@ -126,7 +100,7 @@ export class CollisionDetector {
     this.roomBox.getCenter(roomCenter);
 
     const normal = new THREE.Vector3().subVectors(roomCenter, center);
-    normal.y = 0; // Don't push furniture up/down, only horizontally
+    normal.y = 0;
     normal.normalize();
 
     return {
@@ -136,9 +110,6 @@ export class CollisionDetector {
     };
   }
 
-  /**
-   * Check if furniture collides with other furniture
-   */
   checkFurnitureCollisions(itemId: string): CollisionResult {
     const box = this.furnitureBoxes.get(itemId);
     
@@ -162,9 +133,6 @@ export class CollisionDetector {
     };
   }
 
-  /**
-   * Check all collisions for a furniture item
-   */
   checkAllCollisions(itemId: string): CollisionResult {
     const roomCollision = this.checkRoomCollision(itemId);
     const furnitureCollision = this.checkFurnitureCollisions(itemId);
@@ -179,9 +147,6 @@ export class CollisionDetector {
     };
   }
 
-  /**
-   * Find valid position near desired position (resolve collision)
-   */
   findValidPosition(
     itemId: string,
     desiredPosition: THREE.Vector3,
@@ -225,9 +190,6 @@ export class CollisionDetector {
     return null;
   }
 
-  /**
-   * Create debug visualization box
-   */
   private createDebugBox(itemId: string, box: THREE.Box3, parent: THREE.Object3D | null) {
     // Remove old helper if exists
     const oldHelper = this.helperMeshes.get(itemId);
@@ -259,16 +221,10 @@ export class CollisionDetector {
     this.helperMeshes.set(itemId, helper);
   }
 
-  /**
-   * Get all furniture boxes for visualization or analysis
-   */
   getAllFurnitureBoxes(): Map<string, THREE.Box3> {
     return new Map(this.furnitureBoxes);
   }
 
-  /**
-   * Clear all collision data
-   */
   clear() {
     this.furnitureBoxes.clear();
     this.roomBox = null;
@@ -281,9 +237,6 @@ export class CollisionDetector {
     this.helperMeshes.clear();
   }
 
-  /**
-   * Check if a position is valid (no collisions)
-   */
   isPositionValid(
     itemId: string,
     position: THREE.Vector3,
@@ -302,9 +255,6 @@ export class CollisionDetector {
     return !collision.hasCollision;
   }
 
-  /**
-   * Get distance to nearest collision
-   */
   getDistanceToNearestCollision(itemId: string): number {
     const box = this.furnitureBoxes.get(itemId);
     if (!box) return Infinity;
@@ -322,10 +272,6 @@ export class CollisionDetector {
     return minDistance;
   }
 
-  /**
-   * Prevent furniture from going through walls
-   * Returns corrected position
-   */
   constrainToRoom(position: THREE.Vector3, itemBox: THREE.Box3): THREE.Vector3 {
     if (!this.roomBox) return position;
 
@@ -343,8 +289,7 @@ export class CollisionDetector {
       correctedPosition.x = this.roomBox.max.x - halfSize.x;
     }
 
-    // Constrain Y - only prevent going through ceiling, not floor
-    // Furniture should be allowed to sit on floor (min Y)
+    // Constrain Y 
     if (correctedPosition.y + halfSize.y > this.roomBox.max.y) {
       correctedPosition.y = this.roomBox.max.y - halfSize.y;
     }

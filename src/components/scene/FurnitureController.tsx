@@ -33,7 +33,6 @@ function DraggableFurniture({
 
   const { scene } = item.modelPath ? useGLTF(item.modelPath) : { scene: null };
 
-  // Initialize model and collision detection
   React.useEffect(() => {
     if (!modelRef.current || !scene) return;
 
@@ -118,7 +117,6 @@ function DraggableFurniture({
       }
     }
 
-    // Handle movement with collision detection
     if (moveVector.length() > deadzone) {
       const forward = new THREE.Vector3();
       camera.getWorldDirection(forward);
@@ -168,7 +166,6 @@ function DraggableFurniture({
       }
     }
 
-    // Handle rotation
     if (Math.abs(rotateDelta) > deadzone) {
       const deltaRotation = rotateDelta * rotateSpeed * delta;
       const currentRotationY = (item.rotation && typeof item.rotation[1] === 'number' && !isNaN(item.rotation[1])) ? item.rotation[1] : 0;

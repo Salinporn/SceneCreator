@@ -88,11 +88,10 @@ const HomeModelContent = React.forwardRef<THREE.Group, { url: string; homeId: st
       // Add cloned scene
       internalRef.current.add(clonedScene);
       
-      // Apply floor alignment using utility function
       setTimeout(() => {
         if (internalRef.current) {
           const adjustment = alignToFloor(internalRef.current);
-          console.log('🏠 Home model aligned to floor:', {
+          console.log('Home model aligned to floor:', {
             homeId,
             adjustment
           });

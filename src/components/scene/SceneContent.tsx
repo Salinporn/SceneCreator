@@ -15,8 +15,28 @@ import { Furniture, PlacedItem } from "../types/Furniture";
 import { makeAuthenticatedRequest, logout } from "../../utils/Auth";
 
 const DIGITAL_HOME_PLATFORM_BASE_URL = import.meta.env.VITE_DIGITAL_HOME_PLATFORM_URL;
+// Add these imports at the top
+import { collisionDetector } from "../../utils/CollisionDetection";
+import * as THREE from "three";
 
-export function SceneContent({ homeId }: { homeId: string }) {
+// Update the props interface
+interface SceneContentProps {
+  homeId: string;
+  digitalHome?: {
+    spatialData?: {
+      boundary?: {
+        min_x: number;
+        max_x: number;
+        min_y: number;
+        max_y: number;
+        min_z: number;
+        max_z: number;
+      };
+    };
+  };
+}
+
+export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   const navigate = useNavigate();
   const [showSlider, setShowSlider] = React.useState(false);
   const [showFurniture, setShowFurniture] = React.useState(false);
@@ -34,6 +54,22 @@ export function SceneContent({ homeId }: { homeId: string }) {
   const [catalogLoading, setCatalogLoading] = React.useState(false);
   const [modelUrlCache, setModelUrlCache] = React.useState<Map<number, string>>(new Map());
 
+  useEffect(() => {
+    if (digitalHome?.spatialData?.boundary) {
+      collisionDetector.setRoomBoundary(digitalHome.spatialData.boundary);
+      console.log('✅ Collision detection initialized with boundary:', digitalHome.spatialData.boundary);
+      
+      // Optional: Enable debug mode to see bounding boxes
+      // collisionDetector.setDebugMode(true);
+    }
+  }, [digitalHome]);
+
+  useEffect(() => {
+    return () => {
+      collisionDetector.clear();
+    };
+  }, []);
+
   // Load furniture catalog
   useEffect(() => {
     const loadFurnitureCatalog = async () => {
@@ -43,7 +79,6 @@ export function SceneContent({ homeId }: { homeId: string }) {
         
         if (response.ok) {
           const data = await response.json();
-          console.log('📦 Loaded furniture catalog:', data.available_items);
           
           const items: Furniture[] = data.available_items.map((item: any) => ({
             id: item.id.toString(),
@@ -74,7 +109,6 @@ export function SceneContent({ homeId }: { homeId: string }) {
 
     loadFurnitureCatalog();
 
-    // Cleanup all model URLs on unmount
     return () => {
       modelUrlCache.forEach(url => URL.revokeObjectURL(url));
     };
@@ -85,14 +119,13 @@ export function SceneContent({ homeId }: { homeId: string }) {
     const loadDeployedItems = async () => {
       setLoading(true);
       try {
-        console.log('🔄 Loading deployed items for home:', homeId);
         const response = await makeAuthenticatedRequest(
           `/digitalhomes/get_deployed_items_details/${homeId}/`
         );
         
         if (response.ok) {
           const data = await response.json();
-          console.log('✅ Loaded deployed items:', data.deployed_items);
+          console.log('Loaded deployed items:', data.deployed_items);
           
           // Transform API response to PlacedItem format
           const items: PlacedItem[] = [];
@@ -122,7 +155,7 @@ export function SceneContent({ homeId }: { homeId: string }) {
               description: itemData.description,
               model_id: itemData.model_id,
               modelPath: modelPath,
-              image: undefined, // Not needed for placed items
+              image: undefined,
               category: itemData.category,
               type: itemData.type,
               is_container: itemData.is_container,
@@ -137,7 +170,6 @@ export function SceneContent({ homeId }: { homeId: string }) {
             items.push(placedItem);
           }
           
-          console.log('🪑 Placed items loaded:', items.length);
           setPlacedItems(items);
         } else {
           const errorData = await response.json();
@@ -192,14 +224,70 @@ export function SceneContent({ homeId }: { homeId: string }) {
     setShowControlPanel(!showControlPanel);
   };
 
+  const handleBackToHome = () => {
+    console.log('Navigating back to home...');
+    navigate('/');
+  };
+
+  const handleSelectFurniture = (f: Furniture) => {
+    console.log("Spawning furniture:", f.name, "at:", currentSpawnPositionRef.current);
+    
+    const modelPath = modelUrlCache.get(f.model_id);
+    if (!modelPath) {
+      console.warn('Model not loaded yet for:', f.name);
+      return;
+    }
+
+    const spawnPos = new THREE.Vector3(
+      currentSpawnPositionRef.current[0],
+      currentSpawnPositionRef.current[1],
+      currentSpawnPositionRef.current[2]
+    );
+
+    // Validate spawn position is within room bounds
+    if (collisionDetector['roomBox']) {
+      const roomBox = collisionDetector['roomBox'];
+      if (!roomBox.containsPoint(spawnPos)) {
+        console.warn('Spawn position outside room, clamping to bounds');
+        spawnPos.clamp(roomBox.min, roomBox.max);
+      }
+    }
+
+    const newItem: PlacedItem = {
+      ...f,
+      modelPath,
+      position: [spawnPos.x, spawnPos.y, spawnPos.z],
+      rotation: [0, 0, 0],
+      scale: sliderValue,
+    };
+    
+    setPlacedItems([...placedItems, newItem]);
+    setSelectedItemIndex(placedItems.length);
+    setRotationValue(0);
+  };
+
   const handleSaveScene = async () => {
     if (saving) return;
     
+    const collisionWarnings: string[] = [];
+    placedItems.forEach((item, index) => {
+      const itemId = `${item.id}-${index}`;
+      const collision = collisionDetector.checkAllCollisions(itemId);
+      if (collision.hasCollision) {
+        collisionWarnings.push(`${item.name} is colliding with: ${collision.collidingObjects.join(', ')}`);
+      }
+    });
+
+    if (collisionWarnings.length > 0) {
+      const message = `⚠️ Warning: Found ${collisionWarnings.length} collision(s):\n\n${collisionWarnings.join('\n')}\n\nDo you want to save anyway?`;
+      if (!confirm(message)) {
+        return;
+      }
+    }
+    
     setSaving(true);
     try {
-      console.log('💾 Saving scene with', placedItems.length, 'items...');
 
-      // Transform placedItems into the format expected by the API
       const deployedItems: Record<string, any> = {};
       
       placedItems.forEach((item) => {
@@ -210,7 +298,7 @@ export function SceneContent({ homeId }: { homeId: string }) {
             item.position[0],
             item.position[1],
             item.position[2],
-            0 // m coordinate (not used, set to 0)
+            0
           ],
           rotation: item.rotation || [0, 0, 0],
           scale: [scale, scale, scale],
@@ -250,43 +338,12 @@ export function SceneContent({ homeId }: { homeId: string }) {
     }
   };
 
-  const handleBackToHome = () => {
-    console.log('🔙 Navigating back to home...');
-    navigate('/');
-  };
-
   const handleLogout = async () => {
     console.log('👋 Logging out...');
     await logout();
     window.location.href = DIGITAL_HOME_PLATFORM_BASE_URL;
   };
-
-  const handleSelectFurniture = (f: Furniture) => {
-    console.log("Spawning furniture:", f.name, "at:", currentSpawnPositionRef.current);
     
-    const modelPath = modelUrlCache.get(f.model_id);
-    if (!modelPath) {
-      console.warn('Model not loaded yet for:', f.name);
-      return;
-    }
-
-    const newItem: PlacedItem = {
-      ...f,
-      modelPath,
-      position: [
-        currentSpawnPositionRef.current[0], 
-        currentSpawnPositionRef.current[1], 
-        currentSpawnPositionRef.current[2]
-      ],
-      rotation: [0, 0, 0],
-      scale: sliderValue,
-    };
-    
-    setPlacedItems([...placedItems, newItem]);
-    setSelectedItemIndex(placedItems.length);
-    setRotationValue(0);
-  };
-
   const handleUpdateItemPosition = (index: number, newPosition: [number, number, number]) => {
     setPlacedItems((prev) => {
       const updated = [...prev];
@@ -351,7 +408,6 @@ export function SceneContent({ homeId }: { homeId: string }) {
     }
   };
 
-  // Show loading state while deployed items are loading
   if (loading && placedItems.length === 0) {
     return (
       <>
@@ -449,7 +505,7 @@ export function SceneContent({ homeId }: { homeId: string }) {
             position={[0, -0.4, 0]} 
           />
           <VRSlider
-            show={showSlider && selectedItemIndex !== null} 
+            show={null} 
             value={rotationValue} 
             onChange={handleRotationSliderChange} 
             label="Rotation" 

@@ -41,7 +41,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   const [showInstructions, setShowInstructions] = React.useState(true);
   const [showControlPanel, setShowControlPanel] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
-  const [loading, setLoading] = React.useState(true);
+  const [_loading, setLoading] = React.useState(true);
   const [sliderValue, setSliderValue] = React.useState(0.5);
   const [rotationValue, setRotationValue] = React.useState(0);
   const [placedItems, setPlacedItems] = React.useState<PlacedItem[]>([]);

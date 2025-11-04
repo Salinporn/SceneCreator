@@ -15,11 +15,9 @@ import { Furniture, PlacedItem } from "../types/Furniture";
 import { makeAuthenticatedRequest, logout } from "../../utils/Auth";
 
 const DIGITAL_HOME_PLATFORM_BASE_URL = import.meta.env.VITE_DIGITAL_HOME_PLATFORM_URL;
-// Add these imports at the top
 import { collisionDetector } from "../../utils/CollisionDetection";
 import * as THREE from "three";
 
-// Update the props interface
 interface SceneContentProps {
   homeId: string;
   digitalHome?: {
@@ -58,9 +56,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     if (digitalHome?.spatialData?.boundary) {
       collisionDetector.setRoomBoundary(digitalHome.spatialData.boundary);
       console.log('✅ Collision detection initialized with boundary:', digitalHome.spatialData.boundary);
-      
-      // Optional: Enable debug mode to see bounding boxes
-      // collisionDetector.setDebugMode(true);
     }
   }, [digitalHome]);
 
@@ -127,15 +122,12 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
           const data = await response.json();
           console.log('Loaded deployed items:', data.deployed_items);
           
-          // Transform API response to PlacedItem format
           const items: PlacedItem[] = [];
           
           for (const itemObj of data.deployed_items) {
-            // Each item is an object with item_id as key
             const itemId = Object.keys(itemObj)[0];
             const itemData = itemObj[itemId];
             
-            // Load the 3D model for this item
             await loadFurnitureModel(itemData.model_id);
             const modelPath = modelUrlCache.get(itemData.model_id);
             
@@ -144,7 +136,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
               continue;
             }
             
-            // Extract spatial data
             const position = itemData.spatialData.positions;
             const rotation = itemData.spatialData.rotation;
             const scale = itemData.spatialData.scale;
@@ -159,11 +150,8 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
               category: itemData.category,
               type: itemData.type,
               is_container: itemData.is_container,
-              // Position: API returns [x, y, z, m] but we only need [x, y, z]
               position: [position[0], position[1], position[2]],
-              // Rotation: API returns [rx, ry, rz]
               rotation: [rotation[0], rotation[1], rotation[2]],
-              // Scale: API returns [sx, sy, sz], we use uniform scale
               scale: scale[0],
             };
             
@@ -182,11 +170,13 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       }
     };
 
-    // Only load deployed items after we have the model cache ready
-    if (modelUrlCache.size > 0) {
+    // Load deployed items 
+    if (modelUrlCache.size > 0 || furnitureCatalog.length > 0) {
       loadDeployedItems();
+    } else {
+      setLoading(false);
     }
-  }, [homeId, modelUrlCache.size]);
+  }, [homeId, modelUrlCache.size, furnitureCatalog.length]);
 
   const loadFurnitureModel = async (modelId: number) => {
     if (modelUrlCache.has(modelId)) return;
@@ -244,7 +234,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       currentSpawnPositionRef.current[2]
     );
 
-    // Validate spawn position is within room bounds
     if (collisionDetector['roomBox']) {
       const roomBox = collisionDetector['roomBox'];
       if (!roomBox.containsPoint(spawnPos)) {
@@ -264,6 +253,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     setPlacedItems([...placedItems, newItem]);
     setSelectedItemIndex(placedItems.length);
     setRotationValue(0);
+    setShowSlider(true);
   };
 
   const handleSaveScene = async () => {
@@ -287,7 +277,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     
     setSaving(true);
     try {
-
       const deployedItems: Record<string, any> = {};
       
       placedItems.forEach((item) => {
@@ -371,6 +360,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
 
   const handleSelectItem = (index: number) => {
     setSelectedItemIndex(index);
+    setShowSlider(true);
     if (placedItems[index]?.rotation) {
       const twoPi = Math.PI * 2;
       let normalizedRotation = placedItems[index].rotation![1] % twoPi;
@@ -408,23 +398,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     }
   };
 
-  if (loading && placedItems.length === 0) {
-    return (
-      <>
-        <color args={["#808080"]} attach="background" />
-        <PerspectiveCamera makeDefault position={[0, 1.6, 2]} fov={75} />
-        <ambientLight intensity={0.5} />
-        
-        <group position={[0, 1.6, -2]}>
-          <mesh>
-            <boxGeometry args={[0.3, 0.3, 0.3]} />
-            <meshStandardMaterial color="#4CAF50" wireframe />
-          </mesh>
-        </group>
-      </>
-    );
-  }
-
   return (
     <>
       <SpawnManager spawnPositionRef={currentSpawnPositionRef} />
@@ -445,13 +418,9 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
         />
       </group>
 
-      {/* Toggle for furniture panel (Y/B button) */}
       <CatalogToggle onToggle={handleToggleUI} />
-      
-      {/* Toggle for control panel (X/A button) */}
       <ControlPanelToggle onToggle={handleToggleControlPanel} />
       
-      {/* Instructions Panel */}
       <HeadLockedUI 
         distance={1.5} 
         verticalOffset={0} 
@@ -460,7 +429,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
         <VRInstructionPanel show={showInstructions} />
       </HeadLockedUI>
 
-      {/* Furniture Catalog Panel */}
       <HeadLockedUI 
         distance={1.5} 
         verticalOffset={0} 
@@ -474,7 +442,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
         />
       </HeadLockedUI>
 
-      {/* Control Panel (Save, Back, Logout) */}
       <HeadLockedUI 
         distance={1.5} 
         verticalOffset={0} 
@@ -489,7 +456,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
         />
       </HeadLockedUI>
 
-      {/* Scale and Rotation Sliders */}
       <HeadLockedUI 
         distance={1.0} 
         enabled={showSlider && selectedItemIndex !== null}

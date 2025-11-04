@@ -10,11 +10,21 @@ export class CollisionDetector {
   private static instance: CollisionDetector;
   private furnitureBoxes: Map<string, THREE.Box3> = new Map();
   private roomBox: THREE.Box3 | null = null;
-  private roomBoundary: any = null;
   private helperMeshes: Map<string, THREE.Mesh> = new Map();
   private showDebugBoxes: boolean = false;
 
   private constructor() {}
+
+  private computeBoxDistance(boxA: THREE.Box3, boxB: THREE.Box3): number {
+    // Get the overlap along each axis
+    const dx = Math.max(0, Math.max(boxB.min.x - boxA.max.x, boxA.min.x - boxB.max.x));
+    const dy = Math.max(0, Math.max(boxB.min.y - boxA.max.y, boxA.min.y - boxB.max.y));
+    const dz = Math.max(0, Math.max(boxB.min.z - boxA.max.z, boxA.min.z - boxB.max.z));
+
+    // Return Euclidean distance between nearest edges
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
+  }
+
 
   static getInstance(): CollisionDetector {
     if (!CollisionDetector.instance) {
@@ -43,13 +53,12 @@ export class CollisionDetector {
     min_z: number;
     max_z: number;
   }) {
-    this.roomBoundary = boundary;
     this.roomBox = new THREE.Box3(
       new THREE.Vector3(boundary.min_x, boundary.min_y, boundary.min_z),
       new THREE.Vector3(boundary.max_x, boundary.max_y, boundary.max_z)
     );
     
-    console.log('🏠 Room boundary set:', this.roomBox);
+    console.log('Room boundary set:', this.roomBox);
   }
 
   updateFurnitureBox(itemId: string, object: THREE.Object3D) {
@@ -228,7 +237,6 @@ export class CollisionDetector {
   clear() {
     this.furnitureBoxes.clear();
     this.roomBox = null;
-    this.roomBoundary = null;
     this.helperMeshes.forEach(mesh => {
       if (mesh.parent) {
         mesh.parent.remove(mesh);
@@ -264,7 +272,7 @@ export class CollisionDetector {
     // Check distance to other furniture
     this.furnitureBoxes.forEach((otherBox, otherId) => {
       if (otherId !== itemId) {
-        const distance = box.distanceToBox(otherBox);
+        const distance = this.computeBoxDistance(box, otherBox);
         minDistance = Math.min(minDistance, distance);
       }
     });

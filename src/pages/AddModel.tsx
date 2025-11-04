@@ -99,8 +99,8 @@ export function AddModel() {
       return (
         <form onSubmit={handleHomeSubmit} style={formStyle}>
           <Input label="Home Name *" value={homeName} onChange={setHomeName} placeholder="e.g., My Villa" />
-          <FileInput label="Model File (.glb, .gltf) *" accept=".glb,.gltf" onChange={(e) => setHomeModelFile(e.target.files?.[0] || null)} />
-          <FileInput label="Texture Files (optional)" multiple onChange={(e) => setHomeTextureFiles(e.target.files)} />
+          <FileInput label="Model File (.glb, .gltf) *" accept=".glb,.gltf" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setHomeModelFile(e.target.files?.[0] || null)} />
+          <FileInput label="Texture Files (optional)" multiple onChange={(e: React.ChangeEvent<HTMLInputElement>) => setHomeTextureFiles(e.target.files)} />
           <SubmitButtons loading={loading} back={() => navigate("/")} text="Add Home" />
         </form>
       );
@@ -113,9 +113,9 @@ export function AddModel() {
         <Input label="Category" value={category} onChange={setCategory} placeholder="e.g., Living Room" />
         <Input label="Type" value={type} onChange={setType} placeholder="e.g., Chair" />
         <Checkbox label="Is Container?" checked={isContainer} onChange={setIsContainer} />
-        <FileInput label="Model File (.glb, .gltf) *" accept=".glb,.gltf" onChange={(e) => setItemModelFile(e.target.files?.[0] || null)} />
-        <FileInput label="Texture Files (optional)" multiple onChange={(e) => setItemTextureFiles(e.target.files)} />
-        <FileInput label="Preview Image (optional)" accept="image/*" onChange={(e) => setItemImage(e.target.files?.[0] || null)} />
+        <FileInput label="Model File (.glb, .gltf) *" accept=".glb,.gltf" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setItemModelFile(e.target.files?.[0] || null)} />
+        <FileInput label="Texture Files (optional)" multiple onChange={(e: React.ChangeEvent<HTMLInputElement>) => setItemTextureFiles(e.target.files)} />
+        <FileInput label="Preview Image (optional)" accept="image/*" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setItemImage(e.target.files?.[0] || null)} />
         <SubmitButtons loading={loading} back={() => navigate("/")} text="Add Item" />
       </form>
     );
@@ -250,14 +250,14 @@ const SubmitButtons = ({ loading, back, text }: any) => (
   </div>
 );
 
-const pageStyle = {
+const pageStyle: React.CSSProperties = {
   minHeight: "100vh",
   backgroundColor: "#1a1a2e",
   color: "white",
   fontFamily: "system-ui, sans-serif",
   padding: "2rem",
 };
-const formStyle = {
+const formStyle: React.CSSProperties = {
   background: "rgba(255,255,255,0.05)",
   padding: "2rem",
   borderRadius: "12px",
@@ -266,8 +266,8 @@ const formStyle = {
   flexDirection: "column",
   gap: "1rem",
 };
-const labelStyle = { marginBottom: "0.5rem", color: "rgba(255,255,255,0.7)" };
-const inputStyle = {
+const labelStyle: React.CSSProperties = { marginBottom: "0.5rem", color: "rgba(255,255,255,0.7)" };
+const inputStyle: React.CSSProperties = {
   padding: "0.75rem",
   borderRadius: "6px",
   border: "1px solid rgba(255,255,255,0.2)",
@@ -275,20 +275,20 @@ const inputStyle = {
   color: "white",
   outline: "none",
 };
-const fileInputStyle = {
+const fileInputStyle: React.CSSProperties = {
   background: "rgba(0,0,0,0.3)",
   border: "1px solid rgba(255,255,255,0.2)",
   borderRadius: "6px",
   padding: "0.5rem",
   color: "white",
 };
-const modeSwitchStyle = {
+const modeSwitchStyle: React.CSSProperties = {
   display: "flex",
   gap: "1rem",
   justifyContent: "center",
   marginBottom: "1.5rem",
 };
-const activeModeBtn = {
+const activeModeBtn: React.CSSProperties = {
   flex: 1,
   padding: "0.75rem",
   background: "#3b82f6",
@@ -298,7 +298,7 @@ const activeModeBtn = {
   fontWeight: "600",
   cursor: "pointer",
 };
-const inactiveModeBtn = {
+const inactiveModeBtn: React.CSSProperties = {
   ...activeModeBtn,
   background: "rgba(255,255,255,0.1)",
   color: "rgba(255,255,255,0.7)",

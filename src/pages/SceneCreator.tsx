@@ -128,7 +128,6 @@ export function SceneCreator() {
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       <Canvas style={{ width: "100vw", height: "100vh", position: "fixed" }}>
         <XR store={xrStore}>
-          {/* 🆕 Pass digitalHome data to SceneContent */}
           {homeId && <SceneContent homeId={homeId} digitalHome={digitalHome} />}
         </XR>
       </Canvas>

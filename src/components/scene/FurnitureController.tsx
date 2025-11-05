@@ -13,6 +13,7 @@ interface DraggableFurnitureProps {
   onPositionChange: (newPosition: [number, number, number]) => void;
   onRotationChange: (newRotation: [number, number, number]) => void;
   onCollisionDetected?: (hasCollision: boolean) => void;
+  navigationMode: boolean;
 }
 
 function DraggableFurniture({
@@ -22,6 +23,7 @@ function DraggableFurniture({
   onPositionChange,
   onRotationChange,
   onCollisionDetected,
+  navigationMode,
 }: DraggableFurnitureProps) {
   const groupRef = React.useRef<THREE.Group>(null);
   const modelRef = React.useRef<THREE.Group>(null);
@@ -38,7 +40,7 @@ function DraggableFurniture({
 
     const clonedScene = scene.clone();
     modelRef.current.clear();
-    
+
     const box = new THREE.Box3().setFromObject(clonedScene);
     const minY = box.min.y;
     const height = box.max.y - box.min.y;
@@ -46,13 +48,6 @@ function DraggableFurniture({
     setModelHeight(-minY);
     clonedScene.position.y = -minY;
     modelRef.current.add(clonedScene);
-    
-    console.log('🪑 Furniture aligned:', {
-      name: item.name,
-      originalMinY: minY,
-      height,
-      adjustment: -minY
-    });
   }, [scene, item.modelPath]);
 
   // Update collision detection when position changes
@@ -75,7 +70,6 @@ function DraggableFurniture({
     }
   }, [item.position, item.rotation, item.scale]);
 
-  // Cleanup collision detection on unmount
   React.useEffect(() => {
     return () => {
       const itemId = `${item.id}`;
@@ -84,7 +78,8 @@ function DraggableFurniture({
   }, [item.id]);
 
   useFrame((_state, delta) => {
-    if (!isSelected || !groupRef.current || !isPresenting) return; 
+    // Disable furniture editing when in navigation mode
+    if (navigationMode || !isSelected || !groupRef.current || !isPresenting) return; 
 
     const session = xr.session;
     const referenceSpace = xr.originReferenceSpace;
@@ -143,7 +138,7 @@ function DraggableFurniture({
       collisionDetector.updateFurnitureBox(itemId, groupRef.current);
       
       const collision = collisionDetector.checkAllCollisions(itemId);
-      
+
       if (!collision.hasCollision) {
         // Position is valid, update
         onPositionChange([newPosition.x, 0, newPosition.z]);
@@ -164,6 +159,7 @@ function DraggableFurniture({
           collisionDetector.updateFurnitureBox(itemId, groupRef.current);
         }
       }
+      onPositionChange([newPosition.x, 0, newPosition.z]);
     }
 
     if (Math.abs(rotateDelta) > deadzone) {
@@ -175,6 +171,8 @@ function DraggableFurniture({
   });
 
   const handleSelect = (e: ThreeEvent<PointerEvent>) => {
+    // Disable selection when in navigation mode
+    if (navigationMode) return;
     e.stopPropagation();
     onSelect();
   };
@@ -189,8 +187,7 @@ function DraggableFurniture({
     >
       <group ref={modelRef} />
       
-      {/* Selection indicator */}
-      {isSelected && (
+      {isSelected && !navigationMode && (
         <>
           <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[0.3, 0.35, 32]} />
@@ -208,7 +205,6 @@ function DraggableFurniture({
         </>
       )}
 
-      {/* Collision warning indicator */}
       {hasCollision && !isSelected && (
         <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.25, 0.3, 32]} />
@@ -229,7 +225,8 @@ export function PlacedFurniture({
   selectedIndex, 
   onSelectItem, 
   onUpdatePosition, 
-  onUpdateRotation 
+  onUpdateRotation,
+  navigationMode = false,
 }: {
   items: PlacedItem[];
   selectedIndex: number | null;
@@ -247,6 +244,7 @@ export function PlacedFurniture({
           onSelect={() => onSelectItem(index)}
           onPositionChange={(newPosition) => onUpdatePosition(index, newPosition)}
           onRotationChange={(newRotation) => onUpdateRotation(index, newRotation)}
+          navigationMode={navigationMode}
         />
       ))}
     </>

@@ -11,6 +11,7 @@ import { VRControlPanel } from "../panel/control/ControlPanel";
 import { ControlPanelToggle } from "../panel/control/ControlPanelTogggle";
 import { HomeModel } from "./HomeModel";
 import { PlacedFurniture, SpawnManager } from "./FurnitureController";
+import { NavigationController } from "./NavigationController";
 import { Furniture, PlacedItem } from "../types/Furniture";
 import { makeAuthenticatedRequest, logout } from "../../utils/Auth";
 
@@ -51,7 +52,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   const [furnitureCatalog, setFurnitureCatalog] = React.useState<Furniture[]>([]);
   const [catalogLoading, setCatalogLoading] = React.useState(false);
   const [modelUrlCache, setModelUrlCache] = React.useState<Map<number, string>>(new Map());
-
   useEffect(() => {
     if (digitalHome?.spatialData?.boundary) {
       collisionDetector.setRoomBoundary(digitalHome.spatialData.boundary);
@@ -74,7 +74,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
         
         if (response.ok) {
           const data = await response.json();
-          
+
           const items: Furniture[] = data.available_items.map((item: any) => ({
             id: item.id.toString(),
             name: item.name,
@@ -109,7 +109,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     };
   }, []);
 
-  // Load deployed items for this home
   useEffect(() => {
     const loadDeployedItems = async () => {
       setLoading(true);
@@ -120,7 +119,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
         
         if (response.ok) {
           const data = await response.json();
-          console.log('Loaded deployed items:', data.deployed_items);
           
           const items: PlacedItem[] = [];
           
@@ -170,7 +168,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       }
     };
 
-    // Load deployed items 
     if (modelUrlCache.size > 0 || furnitureCatalog.length > 0) {
       loadDeployedItems();
     } else {
@@ -214,69 +211,13 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     setShowControlPanel(!showControlPanel);
   };
 
-  const handleBackToHome = () => {
-    console.log('Navigating back to home...');
-    navigate('/');
-  };
-
-  const handleSelectFurniture = (f: Furniture) => {
-    console.log("Spawning furniture:", f.name, "at:", currentSpawnPositionRef.current);
-    
-    const modelPath = modelUrlCache.get(f.model_id);
-    if (!modelPath) {
-      console.warn('Model not loaded yet for:', f.name);
-      return;
-    }
-
-    const spawnPos = new THREE.Vector3(
-      currentSpawnPositionRef.current[0],
-      currentSpawnPositionRef.current[1],
-      currentSpawnPositionRef.current[2]
-    );
-
-    if (collisionDetector['roomBox']) {
-      const roomBox = collisionDetector['roomBox'];
-      if (!roomBox.containsPoint(spawnPos)) {
-        console.warn('Spawn position outside room, clamping to bounds');
-        spawnPos.clamp(roomBox.min, roomBox.max);
-      }
-    }
-
-    const newItem: PlacedItem = {
-      ...f,
-      modelPath,
-      position: [spawnPos.x, spawnPos.y, spawnPos.z],
-      rotation: [0, 0, 0],
-      scale: sliderValue,
-    };
-    
-    setPlacedItems([...placedItems, newItem]);
-    setSelectedItemIndex(placedItems.length);
-    setRotationValue(0);
-    setShowSlider(true);
-  };
-
   const handleSaveScene = async () => {
     if (saving) return;
     
-    const collisionWarnings: string[] = [];
-    placedItems.forEach((item, index) => {
-      const itemId = `${item.id}-${index}`;
-      const collision = collisionDetector.checkAllCollisions(itemId);
-      if (collision.hasCollision) {
-        collisionWarnings.push(`${item.name} is colliding with: ${collision.collidingObjects.join(', ')}`);
-      }
-    });
-
-    if (collisionWarnings.length > 0) {
-      const message = `⚠️ Warning: Found ${collisionWarnings.length} collision(s):\n\n${collisionWarnings.join('\n')}\n\nDo you want to save anyway?`;
-      if (!confirm(message)) {
-        return;
-      }
-    }
-    
     setSaving(true);
     try {
+      console.log('ðŸ’¾ Saving scene with', placedItems.length, 'items...');
+
       const deployedItems: Record<string, any> = {};
       
       placedItems.forEach((item) => {
@@ -287,7 +228,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
             item.position[0],
             item.position[1],
             item.position[2],
-            0
+            0 // m coordinate (not used)
           ],
           rotation: item.rotation || [0, 0, 0],
           scale: [scale, scale, scale],
@@ -312,27 +253,69 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ Scene saved successfully:', result.message);
+        console.log('Scene saved successfully:', result.message);
         alert('Scene saved successfully!');
       } else {
         const error = await response.json();
-        console.error('❌ Failed to save scene:', error);
+        console.error('Failed to save scene:', error);
         alert(`Failed to save scene: ${error.error}`);
       }
     } catch (error) {
-      console.error('❌ Error saving scene:', error);
+      console.error('Error saving scene:', error);
       alert('Error saving scene. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
+  const handleBackToHome = () => {
+    navigate('/');
+  };
+
   const handleLogout = async () => {
-    console.log('👋 Logging out...');
     await logout();
     window.location.href = DIGITAL_HOME_PLATFORM_BASE_URL;
   };
+
+  const handleSelectFurniture = (f: Furniture) => {
+    const modelPath = modelUrlCache.get(f.model_id);
+    if (!modelPath) {
+      console.warn('Model not loaded yet for:', f.name);
+      return;
+    }
+
+        const spawnPos = new THREE.Vector3(
+      currentSpawnPositionRef.current[0],
+      currentSpawnPositionRef.current[1],
+      currentSpawnPositionRef.current[2]
+    );
+
+    if (collisionDetector['roomBox']) {
+      const roomBox = collisionDetector['roomBox'];
+      if (!roomBox.containsPoint(spawnPos)) {
+        console.warn('Spawn position outside room, clamping to bounds');
+        spawnPos.clamp(roomBox.min, roomBox.max);
+      }
+    }
+
+    const newItem: PlacedItem = {
+      ...f,
+      modelPath,
+      position: [
+        currentSpawnPositionRef.current[0], 
+        currentSpawnPositionRef.current[1], 
+        currentSpawnPositionRef.current[2]
+      ],
+      rotation: [0, 0, 0],
+      scale: sliderValue,
+    };
     
+    setPlacedItems([...placedItems, newItem]);
+    setSelectedItemIndex(placedItems.length);
+    setRotationValue(0);
+    setShowSlider(true);
+  };
+
   const handleUpdateItemPosition = (index: number, newPosition: [number, number, number]) => {
     setPlacedItems((prev) => {
       const updated = [...prev];
@@ -398,6 +381,39 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     }
   };
 
+  const collisionWarnings: string[] = [];
+  placedItems.forEach((item, index) => {
+    const itemId = `${item.id}-${index}`;
+    const collision = collisionDetector.checkAllCollisions(itemId);
+    if (collision.hasCollision) {
+      collisionWarnings.push(`${item.name} is colliding with: ${collision.collidingObjects.join(', ')}`);
+    }
+  });
+
+  if (collisionWarnings.length > 0) {
+    const message = `⚠️ Warning: Found ${collisionWarnings.length} collision(s):\n\n${collisionWarnings.join('\n')}\n\nDo you want to save anyway?`;
+    if (!confirm(message)) {
+      return;
+    }
+  }
+
+  if (loading && placedItems.length === 0) {
+    return (
+      <>
+        <color args={["#808080"]} attach="background" />
+        <PerspectiveCamera makeDefault position={[0, 1.6, 2]} fov={75} />
+        <ambientLight intensity={0.5} />
+        
+        <group position={[0, 1.6, -2]}>
+          <mesh>
+            <boxGeometry args={[0.3, 0.3, 0.3]} />
+            <meshStandardMaterial color="#4CAF50" wireframe />
+          </mesh>
+        </group>
+      </>
+    );
+  }
+
   return (
     <>
       <SpawnManager spawnPositionRef={currentSpawnPositionRef} />
@@ -408,6 +424,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       <Environment preset="warehouse" />
 
       <group position={[0, 0, 0]}>
+        <NavigationController onNavigationModeChange={setNavigationMode} />
         <HomeModel homeId={homeId} />
         <PlacedFurniture
           items={placedItems}
@@ -415,6 +432,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
           onSelectItem={handleSelectItem}
           onUpdatePosition={handleUpdateItemPosition}
           onUpdateRotation={handleUpdateItemRotation}
+          navigationMode={navigationMode}
         />
       </group>
 

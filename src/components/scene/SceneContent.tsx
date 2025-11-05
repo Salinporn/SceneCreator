@@ -221,7 +221,9 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       placedItems.forEach((item) => {
         const scale = typeof item.scale === 'number' ? item.scale : 1;
 
-        deployedItems[item.id] = {
+        const itemId = item.id.includes('-') ? item.id.split('-')[0] : item.id;
+
+        deployedItems[itemId] = {
           position: [
             item.position[0],
             item.position[1],

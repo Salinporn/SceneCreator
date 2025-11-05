@@ -3,10 +3,23 @@ import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
 import { useXR } from "@react-three/xr";
 
-export function NavigationController() {
-  const { gl, scene, camera } = useThree();
+interface NavigationControllerProps {
+  moveSpeed?: number;
+  rotateSpeed?: number;
+  deadzone?: number;
+  onNavigationModeChange?: (isActive: boolean) => void;
+}
+
+export function NavigationController({
+  moveSpeed = 2.0,
+  rotateSpeed = 1.5,
+  deadzone = 0.15,
+  onNavigationModeChange
+}: NavigationControllerProps) {
+  const { scene, camera } = useThree();
   const { session } = useXR();
   const rigRef = React.useRef<THREE.Group>();
+  const wasNavigatingRef = React.useRef(false);
 
   React.useEffect(() => {
     if (!session) return;
@@ -21,9 +34,6 @@ export function NavigationController() {
     // Reparent camera under rig
     if (camera.parent !== rig) {
       rig.add(camera);
-      console.log("✅ Camera parented under:", rig.name);
-    } else {
-      console.log("Camera already parented under rig:", rig.name);
     }
 
     rigRef.current = rig;
@@ -32,21 +42,47 @@ export function NavigationController() {
   useFrame((_state, delta) => {
     if (!rigRef.current || !session) return;
 
-    const moveSpeed = 2.0;
-    const deadzone = 0.15;
+    let isGripPressed = false;
     let moveX = 0;
     let moveZ = 0;
+    let rotateInput = 0;
 
     for (const source of session.inputSources) {
-      if (source.handedness === "right" && source.gamepad) {
-        const axes = source.gamepad.axes;
-        if (axes.length >= 4) {
-          const x = axes[2];
-          const z = axes[3];
+      const gamepad = source.gamepad;
+      if (!gamepad) continue;
+
+      const gripButton = gamepad.buttons[1];
+      const squeezeButton = gamepad.buttons[2];
+      
+      if ((gripButton && gripButton.pressed) || (squeezeButton && squeezeButton.pressed)) {
+        isGripPressed = true;
+
+        if (source.handedness === "right" && gamepad.axes.length >= 4) {
+          const x = gamepad.axes[2];
+          const z = gamepad.axes[3];
           if (Math.abs(x) > deadzone) moveX = x;
           if (Math.abs(z) > deadzone) moveZ = z;
         }
+
+        if (source.handedness === "left" && gamepad.axes.length >= 3) {
+          const r = gamepad.axes[2];
+          if (Math.abs(r) > deadzone) rotateInput = -r;
+        }
       }
+    }
+
+    if (isGripPressed !== wasNavigatingRef.current) {
+      wasNavigatingRef.current = isGripPressed;
+      if (onNavigationModeChange) {
+        onNavigationModeChange(isGripPressed);
+      }
+    }
+
+    if (!isGripPressed) return;
+
+    if (Math.abs(rotateInput) > 0) {
+      const rotationDelta = rotateInput * rotateSpeed * delta;
+      rigRef.current.rotateY(rotationDelta);
     }
 
     if (Math.abs(moveX) > 0 || Math.abs(moveZ) > 0) {

@@ -249,12 +249,9 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       );
 
       if (response.ok) {
-        const result = await response.json();
-        console.log('Scene saved successfully:', result.message);
         alert('Scene saved successfully!');
       } else {
         const error = await response.json();
-        console.error('Failed to save scene:', error);
         alert(`Failed to save scene: ${error.error}`);
       }
     } catch (error) {
@@ -426,7 +423,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
           rotateSpeed={1.5}
           deadzone={0.15}
           onNavigationModeChange={(active) => {
-            console.log('Navigation:', active ? 'ON' : 'OFF');
+            setNavigationMode(active);
           }}
         />
         <HomeModel homeId={homeId} />

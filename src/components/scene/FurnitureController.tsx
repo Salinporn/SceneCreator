@@ -158,7 +158,6 @@ function DraggableFurniture({
           collisionDetector.updateFurnitureBox(itemId, groupRef.current);
         }
       }
-      onPositionChange([newPosition.x, 0, newPosition.z]);
     }
 
     if (Math.abs(rotateDelta) > deadzone) {
@@ -170,7 +169,6 @@ function DraggableFurniture({
   });
 
   const handleSelect = (e: ThreeEvent<PointerEvent>) => {
-    // Disable selection when in navigation mode
     if (navigationMode) return;
     e.stopPropagation();
     onSelect();

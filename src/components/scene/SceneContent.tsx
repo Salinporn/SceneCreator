@@ -249,12 +249,9 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       );
 
       if (response.ok) {
-        const result = await response.json();
-        console.log('Scene saved successfully:', result.message);
         alert('Scene saved successfully!');
       } else {
         const error = await response.json();
-        console.error('Failed to save scene:', error);
         alert(`Failed to save scene: ${error.error}`);
       }
     } catch (error) {
@@ -421,7 +418,14 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       <Environment preset="warehouse" />
 
       <group position={[0, 0, 0]}>
-        <NavigationController onNavigationModeChange={setNavigationMode} />
+        <NavigationController 
+          moveSpeed={2.5}
+          rotateSpeed={1.5}
+          deadzone={0.15}
+          onNavigationModeChange={(active) => {
+            setNavigationMode(active);
+          }}
+        />
         <HomeModel homeId={homeId} />
         <PlacedFurniture
           items={placedItems}

@@ -38,12 +38,10 @@ export function Home() {
     setError(null);
 
     try {
-      console.log('📦 Fetching digital homes...');
       const response = await makeAuthenticatedRequest('/digitalhomes/get_digital_homes/');
 
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Digital homes loaded:', data.digital_homes);
         setDigitalHomes(data.digital_homes || []);
       } else {
         const errorData = await response.json();
@@ -64,7 +62,6 @@ export function Home() {
   };
 
   const handleEditScene = (homeId: number) => {
-    console.log('🏠 Opening scene editor for home:', homeId);
     navigate(`/scene/${homeId}`);
   };
 

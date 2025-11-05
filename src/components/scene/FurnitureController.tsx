@@ -43,7 +43,6 @@ function DraggableFurniture({
 
     const box = new THREE.Box3().setFromObject(clonedScene);
     const minY = box.min.y;
-    const height = box.max.y - box.min.y;
     
     setModelHeight(-minY);
     clonedScene.position.y = -minY;
@@ -159,7 +158,6 @@ function DraggableFurniture({
           collisionDetector.updateFurnitureBox(itemId, groupRef.current);
         }
       }
-      onPositionChange([newPosition.x, 0, newPosition.z]);
     }
 
     if (Math.abs(rotateDelta) > deadzone) {
@@ -171,7 +169,6 @@ function DraggableFurniture({
   });
 
   const handleSelect = (e: ThreeEvent<PointerEvent>) => {
-    // Disable selection when in navigation mode
     if (navigationMode) return;
     e.stopPropagation();
     onSelect();

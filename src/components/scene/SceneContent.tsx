@@ -460,6 +460,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
           catalog={furnitureCatalog}
           loading={catalogLoading}
           onSelectItem={handleSelectFurniture} 
+          placedFurnitureIds={placedItems.map(i => i.id)}
         />
       </HeadLockedUI>
 

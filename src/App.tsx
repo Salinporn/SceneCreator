@@ -2,6 +2,8 @@ import * as React from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { XR, useXR, createXRStore } from "@react-three/xr";
+import { HeadLockedUI } from "./HeadLockedUI"; // adjust import path
+import { VRSlider } from "./VRSlider"; // adjust import path
 
 const xrStore = createXRStore();
 
@@ -125,6 +127,8 @@ function NavigationController({
    🔹 Main VR Scene with HeadLockedUI + Slider
 ------------------------------------------------- */
 export default function IntegratedVRScene() {
+  const [showSlider, setShowSlider] = React.useState(true);
+  const [sliderValue, setSliderValue] = React.useState(1.0);
   const [navActive, setNavActive] = React.useState(false);
 
   return (
@@ -144,6 +148,19 @@ export default function IntegratedVRScene() {
               />
             </mesh>
           </group>
+
+          {/* Head-locked UI */}
+          <HeadLockedUI distance={1.0} verticalOffset={0} enabled={showSlider}>
+            <VRSlider
+              show={showSlider}
+              value={sliderValue}
+              onChange={setSliderValue}
+              label="Scale"
+              min={0.1}
+              max={2}
+              position={[0, -0.5, 0]}
+            />
+          </HeadLockedUI>
 
           {/* Simple demo objects */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>

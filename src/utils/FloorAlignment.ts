@@ -20,10 +20,6 @@ export function useFloorAlignment(
       // Adjust the position so the bottom is at y=0
       modelRef.current.position.y -= minY;
       
-      console.log('✅ Floor alignment applied:', {
-        originalMinY: minY,
-        newPositionY: modelRef.current.position.y
-      });
     }, 100);
 
     return () => clearTimeout(timer);

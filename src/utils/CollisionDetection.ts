@@ -57,8 +57,6 @@ export class CollisionDetector {
       new THREE.Vector3(boundary.min_x, boundary.min_y, boundary.min_z),
       new THREE.Vector3(boundary.max_x, boundary.max_y, boundary.max_z)
     );
-    
-    console.log('Room boundary set:', this.roomBox);
   }
 
   updateFurnitureBox(itemId: string, object: THREE.Object3D) {

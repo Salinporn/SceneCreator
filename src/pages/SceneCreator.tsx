@@ -51,7 +51,6 @@ export function SceneCreator() {
         if (response.ok) {
           const data = await response.json();
           setDigitalHome(data.digital_home);
-          console.log('🏠 Digital home loaded:', data.digital_home);
         } else {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to load digital home');

@@ -43,7 +43,6 @@ function DraggableFurniture({
 
     const box = new THREE.Box3().setFromObject(clonedScene);
     const minY = box.min.y;
-    const height = box.max.y - box.min.y;
     
     setModelHeight(-minY);
     clonedScene.position.y = -minY;

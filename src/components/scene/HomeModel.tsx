@@ -10,7 +10,6 @@ export function HomeModel({ homeId }: { homeId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Use the floor alignment hook from utilities
   useFloorAlignment(groupRef, !loading && !error);
 
   useEffect(() => {
@@ -73,7 +72,6 @@ const HomeModelContent = React.forwardRef<THREE.Group, { url: string; homeId: st
     const internalRef = useRef<THREE.Group>(null);
     const { scene } = useGLTF(url);
 
-    // Combine external and internal refs
     React.useImperativeHandle(ref, () => internalRef.current as THREE.Group);
 
     useEffect(() => {
@@ -82,10 +80,8 @@ const HomeModelContent = React.forwardRef<THREE.Group, { url: string; homeId: st
       // Clone the scene to avoid modifying cached version
       const clonedScene = scene.clone();
       
-      // Clear existing children
       internalRef.current.clear();
       
-      // Add cloned scene
       internalRef.current.add(clonedScene);
       
       setTimeout(() => {

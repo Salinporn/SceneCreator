@@ -421,7 +421,14 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       <Environment preset="warehouse" />
 
       <group position={[0, 0, 0]}>
-        <NavigationController onNavigationModeChange={setNavigationMode} />
+        <NavigationController 
+          moveSpeed={2.5}
+          rotateSpeed={1.5}
+          deadzone={0.15}
+          onNavigationModeChange={(active) => {
+            console.log('Navigation:', active ? 'ON' : 'OFF');
+          }}
+        />
         <HomeModel homeId={homeId} />
         <PlacedFurniture
           items={placedItems}

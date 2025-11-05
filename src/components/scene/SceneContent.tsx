@@ -45,6 +45,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   const [_loading, setLoading] = React.useState(true);
   const [sliderValue, setSliderValue] = React.useState(0.5);
   const [rotationValue, setRotationValue] = React.useState(0);
+  const [navigationMode, setNavigationMode] = React.useState(false);
   const [placedItems, setPlacedItems] = React.useState<PlacedItem[]>([]);
   const [selectedItemIndex, setSelectedItemIndex] = React.useState<number | null>(null);
   const currentSpawnPositionRef = React.useRef<[number, number, number]>([0, 0, -2]);
@@ -213,11 +214,8 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
 
   const handleSaveScene = async () => {
     if (saving) return;
-    
     setSaving(true);
     try {
-      console.log('ðŸ’¾ Saving scene with', placedItems.length, 'items...');
-
       const deployedItems: Record<string, any> = {};
       
       placedItems.forEach((item) => {
@@ -284,7 +282,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       return;
     }
 
-        const spawnPos = new THREE.Vector3(
+      const spawnPos = new THREE.Vector3(
       currentSpawnPositionRef.current[0],
       currentSpawnPositionRef.current[1],
       currentSpawnPositionRef.current[2]
@@ -397,7 +395,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     }
   }
 
-  if (loading && placedItems.length === 0) {
+  if (_loading && placedItems.length === 0) {
     return (
       <>
         <color args={["#808080"]} attach="background" />

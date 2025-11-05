@@ -233,6 +233,7 @@ export function PlacedFurniture({
   onSelectItem: (index: number) => void;
   onUpdatePosition: (index: number, newPosition: [number, number, number]) => void;
   onUpdateRotation: (index: number, newRotation: [number, number, number]) => void;
+  navigationMode?: boolean;
 }) {
   return (
     <>

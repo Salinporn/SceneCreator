@@ -7,12 +7,14 @@ export function VRFurniturePanel({
   show, 
   catalog, 
   loading, 
-  onSelectItem 
+  onSelectItem, 
+  placedFurnitureIds = [] 
 }: { 
   show: boolean; 
   catalog: Furniture[];
   loading: boolean;
   onSelectItem: (f: Furniture) => void;
+  placedFurnitureIds?: string[];
 }) {
   const [hoveredItem, setHoveredItem] = React.useState<string | null>(null);
   
@@ -32,6 +34,7 @@ export function VRFurniturePanel({
   );
 
   const panelWidth = 2.6;
+
   
   return (
     <group>
@@ -95,6 +98,7 @@ export function VRFurniturePanel({
             const y = panelHeight / 2 - headerHeight - topPadding - (row * itemHeight) - cardHeight / 2;
 
             const isHovered = hoveredItem === f.id;
+          const isPlaced = placedFurnitureIds.includes(f.id);
 
             return (
               <group key={`${f.id}-${itemIndex}`} position={[x, y, 0.02]}>
@@ -126,11 +130,37 @@ export function VRFurniturePanel({
                 >
                   <planeGeometry args={[cardWidth, cardHeight]} />
                   <meshStandardMaterial 
-                    color={isHovered ? "#e0f2fe" : "#ffffff"} 
+                    color={
+                      isPlaced 
+                        ? "#e2e8f0"   // greyed if already placed
+                        : isHovered 
+                        ? "#e0f2fe"   // blue highlight when hovered
+                        : "#ffffff"
+                    }
                     roughness={0.9}
                     metalness={0.0}
                   />
                 </mesh>
+
+                {isPlaced && (
+                  <mesh position={[0, 0, 0.03]}>
+                    <planeGeometry args={[cardWidth + 0.02, cardHeight + 0.02]} />
+                    <meshBasicMaterial color="#22c55e" transparent opacity={0.5} />
+                  </mesh>
+                )}
+
+                {isPlaced && (
+                  <Text
+                    position={[0, -0.38, 0.05]}
+                    fontSize={0.045}
+                    color="#16a34a"
+                    anchorX="center"
+                    anchorY="middle"
+                    fontWeight="600"
+                  >
+                    ✓ Placed
+                  </Text>
+                )}
 
                 <group position={[0, 0.08, 0.01]}>
                   <mesh position={[0, 0, -0.001]}>

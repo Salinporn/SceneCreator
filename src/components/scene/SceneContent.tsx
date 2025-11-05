@@ -272,13 +272,19 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   };
 
   const handleSelectFurniture = (f: Furniture) => {
+    const alreadyPlaced = placedItems.some(item => item.model_id === f.model_id);
+    if (alreadyPlaced) {
+      console.warn(`${f.name} is already placed in the scene.`);
+      return;
+    }
+
     const modelPath = modelUrlCache.get(f.model_id);
     if (!modelPath) {
       console.warn('Model not loaded yet for:', f.name);
       return;
     }
 
-      const spawnPos = new THREE.Vector3(
+    const spawnPos = new THREE.Vector3(
       currentSpawnPositionRef.current[0],
       currentSpawnPositionRef.current[1],
       currentSpawnPositionRef.current[2]
@@ -295,16 +301,12 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     const newItem: PlacedItem = {
       ...f,
       modelPath,
-      position: [
-        currentSpawnPositionRef.current[0], 
-        currentSpawnPositionRef.current[1], 
-        currentSpawnPositionRef.current[2]
-      ],
+      position: [spawnPos.x, spawnPos.y, spawnPos.z],
       rotation: [0, 0, 0],
       scale: sliderValue,
     };
-    
-    setPlacedItems([...placedItems, newItem]);
+
+    setPlacedItems(prev => [...prev, newItem]);
     setSelectedItemIndex(placedItems.length);
     setRotationValue(0);
     setShowSlider(true);
@@ -458,6 +460,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
           catalog={furnitureCatalog}
           loading={catalogLoading}
           onSelectItem={handleSelectFurniture} 
+          placedFurnitureIds={placedItems.map(i => i.id)}
         />
       </HeadLockedUI>
 

@@ -90,11 +90,7 @@ const HomeModelContent = React.forwardRef<THREE.Group, { url: string; homeId: st
       
       setTimeout(() => {
         if (internalRef.current) {
-          const adjustment = alignToFloor(internalRef.current);
-          console.log('Home model aligned to floor:', {
-            homeId,
-            adjustment
-          });
+          alignToFloor(internalRef.current);
         }
       }, 100);
     }, [scene, homeId]);

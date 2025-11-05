@@ -56,7 +56,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   useEffect(() => {
     if (digitalHome?.spatialData?.boundary) {
       collisionDetector.setRoomBoundary(digitalHome.spatialData.boundary);
-      console.log('✅ Collision detection initialized with boundary:', digitalHome.spatialData.boundary);
     }
   }, [digitalHome]);
 

@@ -49,10 +49,11 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   const [placedItems, setPlacedItems] = React.useState<PlacedItem[]>([]);
   const [selectedItemIndex, setSelectedItemIndex] = React.useState<number | null>(null);
   const currentSpawnPositionRef = React.useRef<[number, number, number]>([0, 0, -2]);
-  
+
   const [furnitureCatalog, setFurnitureCatalog] = React.useState<Furniture[]>([]);
   const [catalogLoading, setCatalogLoading] = React.useState(false);
   const [modelUrlCache, setModelUrlCache] = React.useState<Map<number, string>>(new Map());
+  
   useEffect(() => {
     if (digitalHome?.spatialData?.boundary) {
       collisionDetector.setRoomBoundary(digitalHome.spatialData.boundary);
@@ -71,7 +72,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       setCatalogLoading(true);
       try {
         const response = await makeAuthenticatedRequest('/digitalhomes/list_available_items/');
-        
+
         if (response.ok) {
           const data = await response.json();
 
@@ -85,9 +86,9 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
             type: item.type,
             is_container: item.is_container,
           }));
-          
+
           setFurnitureCatalog(items);
-          
+
           // Preload all furniture models
           items.forEach(item => {
             loadFurnitureModel(item.model_id);
@@ -116,28 +117,28 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
         const response = await makeAuthenticatedRequest(
           `/digitalhomes/get_deployed_items_details/${homeId}/`
         );
-        
+
         if (response.ok) {
           const data = await response.json();
-          
+
           const items: PlacedItem[] = [];
-          
+
           for (const itemObj of data.deployed_items) {
             const itemId = Object.keys(itemObj)[0];
             const itemData = itemObj[itemId];
-            
+
             await loadFurnitureModel(itemData.model_id);
             const modelPath = modelUrlCache.get(itemData.model_id);
-            
+
             if (!modelPath) {
               console.warn('Model not loaded for item:', itemId);
               continue;
             }
-            
+
             const position = itemData.spatialData.positions;
             const rotation = itemData.spatialData.rotation;
             const scale = itemData.spatialData.scale;
-            
+
             const placedItem: PlacedItem = {
               id: itemId,
               name: itemData.name,
@@ -152,10 +153,10 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
               rotation: [rotation[0], rotation[1], rotation[2]],
               scale: scale[0],
             };
-            
+
             items.push(placedItem);
           }
-          
+
           setPlacedItems(items);
         } else {
           const errorData = await response.json();
@@ -180,7 +181,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
 
     try {
       const response = await makeAuthenticatedRequest(`/products/get_3d_model/${modelId}/`);
-      
+
       if (response.ok) {
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
@@ -216,10 +217,10 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     setSaving(true);
     try {
       const deployedItems: Record<string, any> = {};
-      
+
       placedItems.forEach((item) => {
         const scale = typeof item.scale === 'number' ? item.scale : 1;
-        
+
         deployedItems[item.id] = {
           position: [
             item.position[0],
@@ -272,44 +273,66 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   };
 
   const handleSelectFurniture = (f: Furniture) => {
-    const alreadyPlaced = placedItems.some(item => item.model_id === f.model_id);
-    if (alreadyPlaced) {
-      console.warn(`${f.name} is already placed in the scene.`);
-      return;
-    }
+    setPlacedItems((prev) => {
+      const catalogId = f.id;
+      const existingIndex = prev.findIndex((item) => {
+        const placedCatalogId = item.id.split('-')[0];
+        return placedCatalogId === catalogId;
+      });
 
-    const modelPath = modelUrlCache.get(f.model_id);
-    if (!modelPath) {
-      console.warn('Model not loaded yet for:', f.name);
-      return;
-    }
-
-    const spawnPos = new THREE.Vector3(
-      currentSpawnPositionRef.current[0],
-      currentSpawnPositionRef.current[1],
-      currentSpawnPositionRef.current[2]
-    );
-
-    if (collisionDetector['roomBox']) {
-      const roomBox = collisionDetector['roomBox'];
-      if (!roomBox.containsPoint(spawnPos)) {
-        console.warn('Spawn position outside room, clamping to bounds');
-        spawnPos.clamp(roomBox.min, roomBox.max);
+      if (existingIndex !== -1) {
+        console.log("Removing furniture:", f.name);
+        
+        if (selectedItemIndex === existingIndex) {
+          setSelectedItemIndex(null);
+          setShowSlider(false);
+        } else if (selectedItemIndex !== null && selectedItemIndex > existingIndex) {
+          setSelectedItemIndex(selectedItemIndex - 1);
+        }
+        
+        return prev.filter((_, index) => index !== existingIndex);
       }
-    }
 
-    const newItem: PlacedItem = {
-      ...f,
-      modelPath,
-      position: [spawnPos.x, spawnPos.y, spawnPos.z],
-      rotation: [0, 0, 0],
-      scale: sliderValue,
-    };
+      const modelPath = modelUrlCache.get(f.model_id);
+      if (!modelPath) {
+        console.warn('Model not loaded yet for:', f.name);
+        return prev;
+      }
 
-    setPlacedItems(prev => [...prev, newItem]);
-    setSelectedItemIndex(placedItems.length);
-    setRotationValue(0);
-    setShowSlider(true);
+      const spawnPos = new THREE.Vector3(
+        currentSpawnPositionRef.current[0],
+        currentSpawnPositionRef.current[1],
+        currentSpawnPositionRef.current[2]
+      );
+
+      if (collisionDetector['roomBox']) {
+        const roomBox = collisionDetector['roomBox'];
+        if (!roomBox.containsPoint(spawnPos)) {
+          console.warn('Spawn position outside room, clamping to bounds');
+          spawnPos.clamp(roomBox.min, roomBox.max);
+        }
+      }
+
+      const uniqueId = `${f.id}-${Date.now()}`;
+
+      const newItem: PlacedItem = {
+        ...f,
+        id: uniqueId,
+        modelPath,
+        position: [spawnPos.x, spawnPos.y, spawnPos.z],
+        rotation: [0, 0, 0],
+        scale: sliderValue,
+      };
+
+      const newIndex = prev.length;
+      setSelectedItemIndex(newIndex);
+      setRotationValue(0);
+      setShowSlider(true);
+
+      console.log("Adding furniture:", f.name, "at position:", spawnPos);
+      
+      return [...prev, newItem];
+    });
   };
 
   const handleUpdateItemPosition = (index: number, newPosition: [number, number, number]) => {
@@ -368,30 +391,19 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     if (selectedItemIndex !== null) {
       setPlacedItems((prev) => {
         const updated = [...prev];
-        updated[selectedItemIndex] = { 
-          ...updated[selectedItemIndex], 
-          rotation: [0, newRotation, 0] 
+        updated[selectedItemIndex] = {
+          ...updated[selectedItemIndex],
+          rotation: [0, newRotation, 0]
         };
         return updated;
       });
     }
   };
 
-  const collisionWarnings: string[] = [];
-  placedItems.forEach((item, index) => {
-    const itemId = `${item.id}-${index}`;
-    const collision = collisionDetector.checkAllCollisions(itemId);
-    if (collision.hasCollision) {
-      collisionWarnings.push(`${item.name} is colliding with: ${collision.collidingObjects.join(', ')}`);
-    }
-  });
-
-  if (collisionWarnings.length > 0) {
-    const message = `⚠️ Warning: Found ${collisionWarnings.length} collision(s):\n\n${collisionWarnings.join('\n')}\n\nDo you want to save anyway?`;
-    if (!confirm(message)) {
-      return;
-    }
-  }
+  // Get catalog IDs of placed items for the panel
+  const placedCatalogIds = React.useMemo(() => {
+    return placedItems.map(item => item.id.split('-')[0]);
+  }, [placedItems]);
 
   if (_loading && placedItems.length === 0) {
     return (
@@ -399,7 +411,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
         <color args={["#808080"]} attach="background" />
         <PerspectiveCamera makeDefault position={[0, 1.6, 2]} fov={75} />
         <ambientLight intensity={0.5} />
-        
+
         <group position={[0, 1.6, -2]}>
           <mesh>
             <boxGeometry args={[0.3, 0.3, 0.3]} />
@@ -420,7 +432,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       <Environment preset="warehouse" />
 
       <group position={[0, 0, 0]}>
-        <NavigationController 
+        <NavigationController
           moveSpeed={2.5}
           rotateSpeed={1.5}
           deadzone={0.15}
@@ -441,32 +453,32 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
 
       <CatalogToggle onToggle={handleToggleUI} />
       <ControlPanelToggle onToggle={handleToggleControlPanel} />
-      
-      <HeadLockedUI 
-        distance={1.5} 
-        verticalOffset={0} 
+
+      <HeadLockedUI
+        distance={1.5}
+        verticalOffset={0}
         enabled={showInstructions}
       >
         <VRInstructionPanel show={showInstructions} />
       </HeadLockedUI>
 
-      <HeadLockedUI 
-        distance={1.5} 
-        verticalOffset={0} 
+      <HeadLockedUI
+        distance={1.5}
+        verticalOffset={0}
         enabled={showFurniture}
       >
-        <VRFurniturePanel 
-          show={showFurniture} 
+        <VRFurniturePanel
+          show={showFurniture}
           catalog={furnitureCatalog}
           loading={catalogLoading}
-          onSelectItem={handleSelectFurniture} 
-          placedFurnitureIds={placedItems.map(i => i.id)}
+          onSelectItem={handleSelectFurniture}
+          placedFurnitureIds={placedCatalogIds}
         />
       </HeadLockedUI>
 
-      <HeadLockedUI 
-        distance={1.5} 
-        verticalOffset={0} 
+      <HeadLockedUI
+        distance={1.5}
+        verticalOffset={0}
         enabled={showControlPanel}
       >
         <VRControlPanel
@@ -478,28 +490,28 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
         />
       </HeadLockedUI>
 
-      <HeadLockedUI 
-        distance={1.0} 
+      <HeadLockedUI
+        distance={1.0}
         enabled={showSlider && selectedItemIndex !== null}
       >
         <group>
           <VRSlider
-            show={showSlider && selectedItemIndex !== null} 
-            value={sliderValue} 
-            onChange={handleScaleChange} 
-            label="Scale" 
-            min={0.1} 
-            max={2} 
-            position={[0, -0.4, 0]} 
+            show={showSlider && selectedItemIndex !== null}
+            value={sliderValue}
+            onChange={handleScaleChange}
+            label="Scale"
+            min={0.1}
+            max={2}
+            position={[0, -0.4, 0]}
           />
           <VRSlider
-            show={null} 
-            value={rotationValue} 
-            onChange={handleRotationSliderChange} 
-            label="Rotation" 
-            min={0} 
-            max={Math.PI * 2} 
-            position={[0, -0.75, 0]} 
+            show={showSlider && selectedItemIndex !== null}
+            value={rotationValue}
+            onChange={handleRotationSliderChange}
+            label="Rotation"
+            min={0}
+            max={Math.PI * 2}
+            position={[0, -0.75, 0]}
             showDegrees={true}
           />
         </group>

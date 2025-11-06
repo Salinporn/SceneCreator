@@ -507,7 +507,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
             position={[0, -0.4, 0]}
           />
           <VRSlider
-            show={showSlider && selectedItemIndex !== null}
+            show={null}
             value={rotationValue}
             onChange={handleRotationSliderChange}
             label="Rotation"

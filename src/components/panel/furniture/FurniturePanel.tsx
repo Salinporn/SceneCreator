@@ -24,7 +24,7 @@ export function VRFurniturePanel({
   const rows = Math.ceil(catalog.length / itemsPerRow);
   
   const headerHeight = 0.25;
-  const itemHeight = 0.6;
+  const itemHeight = 0.9;
   const topPadding = 0.1;
   const bottomPadding = 0.15;
   

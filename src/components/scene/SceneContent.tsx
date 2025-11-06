@@ -504,7 +504,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
             label="Scale"
             min={0.1}
             max={2}
-            position={[0, -0.4, 0]}
+            position={[0, -0.8, 0]}
           />
           <VRSlider
             show={null}

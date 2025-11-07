@@ -80,8 +80,8 @@ export function Home() {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#1a1a2e',
-      color: 'white',
+      backgroundColor: '#e7e9eb',
+      color: '#1e293b',
       fontFamily: 'system-ui, -apple-system, sans-serif',
       margin: 0,
       padding: 0,
@@ -93,7 +93,7 @@ export function Home() {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        background: 'rgba(0, 0, 0, 0.3)',
+        background: 'white',
         backdropFilter: 'blur(10px)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -102,7 +102,7 @@ export function Home() {
           </h1>
           <span style={{
             padding: '0.25rem 0.75rem',
-            background: 'rgba(59, 130, 246, 0.2)',
+            background: 'rgba(115, 165, 246, 0.21)',
             borderRadius: '999px',
             fontSize: '0.85rem',
             color: '#60a5fa',
@@ -121,7 +121,7 @@ export function Home() {
               background: '#ef4444',
               border: 'none',
               borderRadius: '6px',
-              color: 'white',
+              color: '#ffffff',
               cursor: 'pointer',
               fontSize: '0.9rem',
               fontWeight: '500',
@@ -156,13 +156,15 @@ export function Home() {
                 background: loading ? '#4b5563' : '#3b82f6',
                 border: 'none',
                 borderRadius: '6px',
-                color: 'white',
+                color: '#ffffff',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 fontSize: '0.9rem',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
               }}
+              onMouseOver={(e) => e.currentTarget.style.background = '#2563eb'}
+              onMouseOut={(e) => e.currentTarget.style.background = '#3b82f6'}
             >
               {loading ? '⟳ Loading...' : '↻ Refresh'}
             </button>
@@ -174,7 +176,7 @@ export function Home() {
                 background: '#22c55e',
                 border: 'none',
                 borderRadius: '6px',
-                color: 'white',
+                color: '#ffffff',
                 cursor: 'pointer',
                 fontSize: '0.9rem',
                 display: 'flex',
@@ -246,7 +248,7 @@ export function Home() {
               <div
                 key={home.id}
                 style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
+                  background: 'white',
                   backdropFilter: 'blur(10px)',
                   padding: '0 1.5rem 1.5rem 1.5rem',
                   borderRadius: '16px',
@@ -270,7 +272,7 @@ export function Home() {
                   <h3 style={{
                     fontSize: '1.25rem',
                     marginBottom: '0.5rem',
-                    color: 'white',
+                    color: '#1e293b',
                   }}>
                     {home.name}
                   </h3>
@@ -307,25 +309,25 @@ export function Home() {
                   gap: '0.5rem',
                   marginBottom: '1rem',
                   padding: '1rem',
-                  background: 'rgba(0, 0, 0, 0.2)',
+                  background: '#e7e9eb',
                   borderRadius: '8px',
                   fontSize: '0.85rem',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>Created:</span>
-                    <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                    <span style={{ color: '#1e293b' }}>Created:</span>
+                    <span style={{ color: '#64748b' }}>
                       {formatDate(home.created_at)}
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>Updated:</span>
-                    <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                    <span style={{ color: '#1e293b' }}>Updated:</span>
+                    <span style={{ color: '#64748b' }}>
                       {formatDate(home.updated_at)}
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>Home Model ID:</span>
-                    <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                    <span style={{ color: '#1e293b' }}>Home Model ID:</span>
+                    <span style={{ color: '#64748b' }}>
                       {home.home_id}
                     </span>
                   </div>
@@ -344,7 +346,7 @@ export function Home() {
                       background: '#3b82f6',
                       border: 'none',
                       borderRadius: '8px',
-                      color: 'white',
+                      color: '#ffffff',
                       cursor: 'pointer',
                       fontSize: '0.9rem',
                       fontWeight: '500',
@@ -381,7 +383,7 @@ export function Home() {
             <h3 style={{
               fontSize: '1.2rem',
               marginBottom: '0.75rem',
-              color: 'white',
+              color: '#1e293b',
             }}>
               No Digital Homes Yet
             </h3>

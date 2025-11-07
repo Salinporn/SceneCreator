@@ -18,7 +18,7 @@ export function VRInstructionPanel({ show }: { show: boolean }) {
       <Text position={[0, 0.72, 0.01]} fontSize={0.055} color="#fbbf24" anchorX="center" anchorY="middle" fontWeight="bold">
         🚶 Navigation Mode (Hold Grip)
       </Text>
-      <Text position={[0, 0.60, 0.01]} fontSize={0.04} color="white" anchorX="center" anchorY="middle">
+      <Text position={[0, 0.60, 0.01]} fontSize={0.04} color="#1e293b" anchorX="center" anchorY="middle">
         Hold Grip on either controller to navigate
       </Text>
       <Text position={[0, 0.50, 0.01]} fontSize={0.035} color="#ccc" anchorX="center" anchorY="middle">
@@ -38,10 +38,10 @@ export function VRInstructionPanel({ show }: { show: boolean }) {
       <Text position={[0, 0.20, 0.01]} fontSize={0.045} color="#60a5fa" anchorX="center" anchorY="middle" fontWeight="bold">
         📋 Menu Controls
       </Text>
-      <Text position={[0, 0.10, 0.01]} fontSize={0.038} color="white" anchorX="center" anchorY="middle">
+      <Text position={[0, 0.10, 0.01]} fontSize={0.038} color="#1e293b" anchorX="center" anchorY="middle">
         Y or B button: Toggle furniture menu
       </Text>
-      <Text position={[0, 0.02, 0.01]} fontSize={0.038} color="white" anchorX="center" anchorY="middle">
+      <Text position={[0, 0.02, 0.01]} fontSize={0.038} color="#1e293b" anchorX="center" anchorY="middle">
         X or A button: Toggle control panel
       </Text>
       

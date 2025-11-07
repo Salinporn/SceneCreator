@@ -42,7 +42,7 @@ export function Login() {
       justifyContent: 'center',
       alignItems: 'center',
       minHeight: '100vh',
-      backgroundColor: '#1a1a2e',
+      backgroundColor: '#f5f7fa',
       fontFamily: 'system-ui, -apple-system, sans-serif',
     }}>
       <div style={{
@@ -66,7 +66,7 @@ export function Login() {
               animation: 'spin 1s linear infinite',
               margin: '0 auto',
             }} />
-            <h2 style={{ color: 'white', marginBottom: '0.5rem', fontSize: '1.5rem' }}>
+            <h2 style={{ color: '#1e293b', marginBottom: '0.5rem', fontSize: '1.5rem' }}>
               Authenticating
             </h2>
             <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.95rem' }}>
@@ -90,7 +90,7 @@ export function Login() {
             }}>
               ✓
             </div>
-            <h2 style={{ color: 'white', marginBottom: '0.5rem', fontSize: '1.5rem' }}>
+            <h2 style={{ color: '#1e293b', marginBottom: '0.5rem', fontSize: '1.5rem' }}>
               Success!
             </h2>
             <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.95rem' }}>
@@ -114,11 +114,11 @@ export function Login() {
               justifyContent: 'center',
               margin: '0 auto',
               fontSize: '2rem',
-              color: 'white',
+              color: '#1e293b',
             }}>
               ✕
             </div>
-            <h2 style={{ color: 'white', marginBottom: '0.5rem', fontSize: '1.5rem' }}>
+            <h2 style={{ color: '#1e293b', marginBottom: '0.5rem', fontSize: '1.5rem' }}>
               Authentication Failed
             </h2>
             <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.95rem', marginBottom: '1.5rem' }}>
@@ -130,7 +130,7 @@ export function Login() {
                 display: 'inline-block',
                 padding: '0.75rem 1.5rem',
                 background: '#3b82f6',
-                color: 'white',
+                color: '#1e293b',
                 borderRadius: '8px',
                 textDecoration: 'none',
                 fontSize: '0.95rem',

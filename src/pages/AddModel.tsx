@@ -199,7 +199,7 @@ const FileInput = ({ label, accept, multiple = false, onChange }: any) => (
 );
 
 const Checkbox = ({ label, checked, onChange }: any) => (
-  <label style={{ color: "rgba(255,255,255,0.8)" }}>
+  <label style={{ color: "#64748b" }}>
     <input
       type="checkbox"
       checked={checked}
@@ -221,9 +221,9 @@ const SubmitButtons = ({ loading, back, text }: any) => (
         background: loading ? "#4b5563" : "#22c55e",
         border: "none",
         borderRadius: "8px",
-        color: "white",
+        color: "#ffffff",
         cursor: loading ? "not-allowed" : "pointer",
-        fontWeight: 500,
+        fontWeight: "bold",
         transition: "background 0.2s",
       }}
       onMouseOver={(e) => !loading && (e.currentTarget.style.background = "#16a34a")}
@@ -240,9 +240,9 @@ const SubmitButtons = ({ loading, back, text }: any) => (
         background: "#3b82f6",
         border: "none",
         borderRadius: "8px",
-        color: "white",
+        color: "#ffffff",
         cursor: "pointer",
-        fontWeight: 500,
+        fontWeight: "bold",
       }}
     >
       ← Back
@@ -252,35 +252,35 @@ const SubmitButtons = ({ loading, back, text }: any) => (
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100vh",
-  backgroundColor: "#1a1a2e",
-  color: "white",
+  backgroundColor: "#e7e9eb",
+  color: "#1e293b",
   fontFamily: "system-ui, sans-serif",
   padding: "2rem",
 };
 const formStyle: React.CSSProperties = {
-  background: "rgba(255,255,255,0.05)",
+  background: "#ffffff",
   padding: "2rem",
   borderRadius: "12px",
-  border: "1px solid rgba(255,255,255,0.1)",
+  border: "1px solid rgba(0,0,0,0.1)",
   display: "flex",
   flexDirection: "column",
   gap: "1rem",
 };
-const labelStyle: React.CSSProperties = { marginBottom: "0.5rem", color: "rgba(255,255,255,0.7)" };
+const labelStyle: React.CSSProperties = { marginBottom: "0.5rem", color: "#64748b" };
 const inputStyle: React.CSSProperties = {
   padding: "0.75rem",
   borderRadius: "6px",
   border: "1px solid rgba(255,255,255,0.2)",
-  background: "rgba(0,0,0,0.3)",
-  color: "white",
+  background: "rgba(0,0,0,0.1)",
+  color: "#1e293b",
   outline: "none",
 };
 const fileInputStyle: React.CSSProperties = {
-  background: "rgba(0,0,0,0.3)",
+  background: "rgba(0,0,0,0.1)",
   border: "1px solid rgba(255,255,255,0.2)",
   borderRadius: "6px",
   padding: "0.5rem",
-  color: "white",
+  color: "#1e293b",
 };
 const modeSwitchStyle: React.CSSProperties = {
   display: "flex",
@@ -294,14 +294,14 @@ const activeModeBtn: React.CSSProperties = {
   background: "#3b82f6",
   border: "none",
   borderRadius: "8px",
-  color: "white",
-  fontWeight: "600",
+  color: "#ffffff",
+  fontWeight: "550",
   cursor: "pointer",
 };
 const inactiveModeBtn: React.CSSProperties = {
   ...activeModeBtn,
-  background: "rgba(255,255,255,0.1)",
-  color: "rgba(255,255,255,0.7)",
+  background: "rgba(0,0,0,0.1)",
+  color: "#64748b",
 };
 
 export default AddModel;

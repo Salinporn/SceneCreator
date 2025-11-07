@@ -80,7 +80,7 @@ export function VRControlPanel({
         <Text
           position={[0, 0, 0.01]}
           fontSize={0.06}
-          color="white"
+          color="#1e293b"
           anchorX="center"
           anchorY="middle"
           fontWeight="bold"
@@ -115,7 +115,7 @@ export function VRControlPanel({
         <Text
           position={[0, 0, 0.01]}
           fontSize={0.06}
-          color="white"
+          color="#1e293b"
           anchorX="center"
           anchorY="middle"
           fontWeight="bold"
@@ -150,7 +150,7 @@ export function VRControlPanel({
         <Text
           position={[0, 0, 0.01]}
           fontSize={0.06}
-          color="white"
+          color="#1e293b"
           anchorX="center"
           anchorY="middle"
           fontWeight="bold"

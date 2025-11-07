@@ -38,7 +38,7 @@ export function VRSlider({
         <meshStandardMaterial color="#2c3e50" opacity={0.9} transparent />
       </mesh>
 
-      <Text position={[0, 0.1, 0]} fontSize={0.04} color="white" anchorX="center" anchorY="middle">
+      <Text position={[0, 0.1, 0]} fontSize={0.04} color="#1e293b" anchorX="center" anchorY="middle">
         {label}: {displayValue}
       </Text>
 

@@ -34,8 +34,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        backgroundColor: '#1a1a2e',
-        color: 'white',
+        backgroundColor: '#f5f7fa',
+        color: '#1e293b',
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{

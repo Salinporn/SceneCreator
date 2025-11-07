@@ -11,7 +11,7 @@ export function NotAuthorized() {
       fontFamily: 'system-ui, -apple-system, sans-serif',
     }}>
       <div style={{
-        background: 'white',
+        background: '#1e293b',
         backdropFilter: 'blur(10px)',
         padding: '2rem',
         borderRadius: '16px',
@@ -49,7 +49,7 @@ export function NotAuthorized() {
             display: 'inline-block',
             padding: '0.6rem 3rem',
             background: 'black',
-            color: 'white',
+            color: '#1e293b',
             borderRadius: '8px',
             textDecoration: 'none',
             fontSize: '1rem',

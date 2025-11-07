@@ -73,8 +73,8 @@ export function SceneCreator() {
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        backgroundColor: '#1a1a2e',
-        color: 'white',
+        backgroundColor: '#f5f7fa',
+        color: '#1e293b',
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{
@@ -99,8 +99,8 @@ export function SceneCreator() {
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        backgroundColor: '#1a1a2e',
-        color: 'white',
+        backgroundColor: '#f5f7fa',
+        color: '#1e293b',
         flexDirection: 'column',
       }}>
         <h2 style={{ color: '#f87171', marginBottom: '1rem' }}>Error Loading Scene</h2>
@@ -112,7 +112,7 @@ export function SceneCreator() {
             background: '#3b82f6',
             border: 'none',
             borderRadius: '8px',
-            color: 'white',
+            color: '#1e293b',
             cursor: 'pointer',
             fontSize: '1rem',
           }}
@@ -145,7 +145,7 @@ export function SceneCreator() {
             marginBottom: 20, 
             padding: "12px 24px", 
             backgroundColor: "#4CAF50", 
-            color: "white", 
+            color: "#1e293b", 
             border: "none", 
             borderRadius: 8, 
             cursor: "pointer", 

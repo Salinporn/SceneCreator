@@ -25,16 +25,16 @@ export function VRFurniturePanel({
   const rows = Math.ceil(catalog.length / itemsPerRow);
   
   const headerHeight = 0.25;
-  const itemHeight = 0.9;
-  const topPadding = 0.1;
-  const bottomPadding = 0.4;
+  const itemHeight = 0.65;
+  const topPadding = 0.06;
+  const bottomPadding = 0.06;
   
   const panelHeight = Math.max(
-    2.0,
+    1.5,
     headerHeight + topPadding + (rows * itemHeight) + bottomPadding
   );
 
-  const panelWidth = 2.6;
+  const panelWidth = 1.7;
 
   
   return (
@@ -52,7 +52,7 @@ export function VRFurniturePanel({
 
       {/* Header */}
       <Text 
-        position={[0, panelHeight / 2 - 0.18, 0.01]} 
+        position={[0, panelHeight / 2 - 0.15, 0.01]} 
         fontSize={0.1} 
         color="#ffffff" 
         anchorX="center" 
@@ -91,9 +91,9 @@ export function VRFurniturePanel({
             const col = itemIndex % itemsPerRow;
             const row = Math.floor(itemIndex / itemsPerRow);
             
-            const cardWidth = 0.6;
-            const cardHeight = 0.8;
-            const cardSpacing = 0.1;
+            const cardWidth = 0.44;
+            const cardHeight = 0.59;
+            const cardSpacing = 0.05;
             const totalWidth = itemsPerRow * cardWidth + (itemsPerRow - 1) * cardSpacing;
             const x = -totalWidth / 2 + col * (cardWidth + cardSpacing) + cardWidth / 2;
             const y = panelHeight / 2 - headerHeight - topPadding - (row * itemHeight) - cardHeight / 2;
@@ -136,7 +136,7 @@ export function VRFurniturePanel({
 
                 {isPlaced && (
                   <mesh position={[0, 0.09, 0.03]}>
-                    <planeGeometry args={[0.5, 0.5]} />
+                    <planeGeometry args={[0.35, 0.35]} />
                     <meshBasicMaterial color="rgba(143, 207, 250, 1)" transparent opacity={0.5} />
                   </mesh>
                 )}
@@ -159,15 +159,15 @@ export function VRFurniturePanel({
                   
                   {f.image ? (
                     <mesh>
-                      <planeGeometry args={[0.48, 0.48]} />
+                      <planeGeometry args={[0.35, 0.35]} />
                       <FurnitureImageMaterial image={f.image} />
                     </mesh>
                   ) : (
                     <mesh>
-                      <planeGeometry args={[0.48, 0.48]} />
+                      <planeGeometry args={[0.35, 0.35]} />
                       <meshStandardMaterial color="#d0d6dd" />
                       <Text 
-                        fontSize={0.05} 
+                        fontSize={0.045} 
                         color="#ffffff" 
                         anchorX="center" 
                         anchorY="middle"
@@ -179,9 +179,9 @@ export function VRFurniturePanel({
                 </group>
 
                 {f.type && (
-                  <group position={[-0.12, -0.22, 0.02]}>
+                  <group position={[-0.07, -0.15, 0.02]}>
                     <mesh>
-                      <planeGeometry args={[0.24, 0.07]} />
+                      <planeGeometry args={[0.2, 0.07]} />
                       <meshStandardMaterial 
                         color="#2c3e50" 
                         roughness={0.5}
@@ -189,7 +189,7 @@ export function VRFurniturePanel({
                     </mesh>
                     <Text
                       position={[0, 0, 0.001]}
-                      fontSize={0.045}
+                      fontSize={0.041}
                       color="#ffffff"
                       anchorX="center"
                       anchorY="middle"
@@ -201,8 +201,8 @@ export function VRFurniturePanel({
                 )}
 
                 <Text
-                  position={[0, -0.31, 0.02]}
-                  fontSize={0.05}
+                  position={[0, -0.23, 0.02]}
+                  fontSize={0.042}
                   color="#334155"
                   anchorX="center"
                   anchorY="middle"

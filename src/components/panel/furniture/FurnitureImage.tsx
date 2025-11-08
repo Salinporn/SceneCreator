@@ -31,7 +31,7 @@ export function FurnitureImage({ image }: { image: string }) {
   if (!texture) {
     return (
       <mesh>
-        <planeGeometry args={[0.5, 0.5]} />
+        <planeGeometry args={[0.35, 0.35]} />
         <meshBasicMaterial color="#e2e8f0" />
       </mesh>
     );
@@ -39,7 +39,7 @@ export function FurnitureImage({ image }: { image: string }) {
 
   return (
     <mesh>
-      <planeGeometry args={[0.5, 0.5]} />
+      <planeGeometry args={[0.35, 0.35]} />
       <meshBasicMaterial 
         map={texture} 
         transparent 

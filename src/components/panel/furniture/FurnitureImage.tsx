@@ -19,7 +19,6 @@ export function FurnitureImage({ image }: { image: string }) {
       }
     );
     
-    // Configure texture for crisp rendering
     tex.minFilter = THREE.LinearFilter;
     tex.magFilter = THREE.LinearFilter;
     tex.wrapS = THREE.ClampToEdgeWrapping;
@@ -32,7 +31,7 @@ export function FurnitureImage({ image }: { image: string }) {
   if (!texture) {
     return (
       <mesh>
-        <planeGeometry args={[0.48, 0.48]} />
+        <planeGeometry args={[0.5, 0.5]} />
         <meshBasicMaterial color="#e2e8f0" />
       </mesh>
     );
@@ -40,7 +39,7 @@ export function FurnitureImage({ image }: { image: string }) {
 
   return (
     <mesh>
-      <planeGeometry args={[0.48, 0.48]} />
+      <planeGeometry args={[0.5, 0.5]} />
       <meshBasicMaterial 
         map={texture} 
         transparent 

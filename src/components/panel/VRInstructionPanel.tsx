@@ -5,69 +5,73 @@ export function VRInstructionPanel({ show }: { show: boolean }) {
   return (
     <group>
       <mesh>
-        <planeGeometry args={[2.0, 2.0]} />
+        <planeGeometry args={[2.0, 2]} />
         <meshStandardMaterial color="#2c3e50" opacity={0.9} transparent />
       </mesh>
       
       {/* Header */}
-      <Text position={[0, 0.9, 0.01]} fontSize={0.07} color="#4CAF50" anchorX="center" anchorY="middle" fontWeight="bold">
-        VR Controls
+      <Text position={[0, 0.85, 0.01]} fontSize={0.1} color="#ffffff" anchorX="center" anchorY="middle" fontWeight="bold">
+        Instruction
       </Text>
-      
-      {/* Navigation Mode Section */}
-      <Text position={[0, 0.72, 0.01]} fontSize={0.055} color="#fbbf24" anchorX="center" anchorY="middle" fontWeight="bold">
-        🚶 Navigation Mode (Hold Grip)
-      </Text>
-      <Text position={[0, 0.60, 0.01]} fontSize={0.04} color="#1e293b" anchorX="center" anchorY="middle">
-        Hold Grip on either controller to navigate
-      </Text>
-      <Text position={[0, 0.50, 0.01]} fontSize={0.035} color="#ccc" anchorX="center" anchorY="middle">
-        Left Thumbstick Left/Right: Rotate camera
-      </Text>
-      <Text position={[0, 0.42, 0.01]} fontSize={0.035} color="#ccc" anchorX="center" anchorY="middle">
-        Right Thumbstick Up/Down: Move forward/back
-      </Text>
-      
+
       {/* Separator */}
-      <mesh position={[0, 0.32, 0.01]}>
+      <mesh position={[0, 0.73, 0.01]}>
         <planeGeometry args={[1.8, 0.005]} />
-        <meshBasicMaterial color="#4CAF50" />
+        <meshBasicMaterial color="#ccc" />
       </mesh>
-      
+
       {/* UI Controls Section */}
-      <Text position={[0, 0.20, 0.01]} fontSize={0.045} color="#60a5fa" anchorX="center" anchorY="middle" fontWeight="bold">
+      <Text position={[0, 0.63, 0.01]} fontSize={0.07} color="#60a5fa" anchorX="center" anchorY="middle" fontWeight="bold">
         📋 Menu Controls
       </Text>
-      <Text position={[0, 0.10, 0.01]} fontSize={0.038} color="#1e293b" anchorX="center" anchorY="middle">
+      <Text position={[0, 0.5, 0.01]} fontSize={0.06} color="#ffffff" anchorX="center" anchorY="middle">
         Y or B button: Toggle furniture menu
       </Text>
-      <Text position={[0, 0.02, 0.01]} fontSize={0.038} color="#1e293b" anchorX="center" anchorY="middle">
+      <Text position={[0, 0.4, 0.01]} fontSize={0.06} color="#ffffff" anchorX="center" anchorY="middle">
         X or A button: Toggle control panel
       </Text>
       
-      {/* Furniture Editing Section */}
-      <Text position={[0, -0.10, 0.01]} fontSize={0.045} color="#a78bfa" anchorX="center" anchorY="middle" fontWeight="bold">
-        🪑 Furniture Editing
+      {/* Separator */}
+      <mesh position={[0, 0.28, 0.01]}>
+        <planeGeometry args={[1.8, 0.005]} />
+        <meshBasicMaterial color="#495a6b" />
+      </mesh>
+
+        {/* Navigation Mode Section */}
+      <Text position={[0, 0.18, 0.01]} fontSize={0.07} color="#fbbf24" anchorX="center" anchorY="middle" fontWeight="bold">
+        🚶 Navigation Mode
       </Text>
-      <Text position={[0, -0.20, 0.01]} fontSize={0.035} color="#ccc" anchorX="center" anchorY="middle">
+      <Text position={[0, 0.05, 0.01]} fontSize={0.06} color="#ffffff" anchorX="center" anchorY="middle">
+        Hold Grip on either controller to activate navigation mode
+      </Text>
+      <Text position={[0, -0.05, 0.01]} fontSize={0.06} color="#ccc" anchorX="center" anchorY="middle">
+        To rotate camera, move left/right on left thumbstick
+      </Text>
+      <Text position={[0, -0.15, 0.01]} fontSize={0.06} color="#ccc" anchorX="center" anchorY="middle">
+        To walk, move forward/back on right thumbstick
+      </Text>
+
+      {/* Separator */}
+      <mesh position={[0, -0.27, 0.01]}>
+        <planeGeometry args={[1.8, 0.005]} />
+        <meshBasicMaterial color="#495a6b" />
+      </mesh>
+      
+      {/* Furniture Editing Section */}
+      <Text position={[0, -0.38, 0.01]} fontSize={0.07} color="#a78bfa" anchorX="center" anchorY="middle" fontWeight="bold">
+        🪑 Furniture Editing Mode
+      </Text>
+      <Text position={[0, -0.5, 0.01]} fontSize={0.06} color="#ccc" anchorX="center" anchorY="middle">
         Trigger: Select furniture from menu or scene
       </Text>
-      <Text position={[0, -0.28, 0.01]} fontSize={0.035} color="#ccc" anchorX="center" anchorY="middle">
+      <Text position={[0, -0.6, 0.01]} fontSize={0.06} color="#ccc" anchorX="center" anchorY="middle">
         Right Thumbstick: Move selected item
       </Text>
-      <Text position={[0, -0.36, 0.01]} fontSize={0.035} color="#ccc" anchorX="center" anchorY="middle">
+      <Text position={[0, -0.7, 0.01]} fontSize={0.06} color="#ccc" anchorX="center" anchorY="middle">
         Left Thumbstick: Rotate selected item
       </Text>
-      <Text position={[0, -0.44, 0.01]} fontSize={0.035} color="#ccc" anchorX="center" anchorY="middle">
+      <Text position={[0, -0.8, 0.01]} fontSize={0.06} color="#ccc" anchorX="center" anchorY="middle">
         Use sliders to adjust scale & rotation
-      </Text>
-      
-      <Text position={[0, -0.62, 0.01]} fontSize={0.032} color="#64748b" anchorX="center" anchorY="middle">
-        Note: Furniture editing is disabled in navigation mode
-      </Text>
-      
-      <Text position={[0, -0.82, 0.01]} fontSize={0.038} color="#10b981" anchorX="center" anchorY="middle" fontWeight="500">
-        Control Panel: Save, Back to Home, Logout
       </Text>
     </group>
   );

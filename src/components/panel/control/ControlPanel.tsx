@@ -4,12 +4,14 @@ import { Text } from "@react-three/drei";
 export function VRControlPanel({
   show,
   onSave,
+  onHelp,
   onBack,
   onLogout,
   saving = false,
 }: {
   show: boolean;
   onSave: () => void;
+  onHelp: () => void; 
   onBack: () => void;
   onLogout: () => void;
   saving?: boolean;
@@ -19,7 +21,7 @@ export function VRControlPanel({
   if (!show) return null;
 
   const panelWidth = 1.8;
-  const panelHeight = 1.0;
+  const panelHeight = 1.2;
   const buttonWidth = 0.6;
   const buttonHeight = 0.15;
 
@@ -45,11 +47,11 @@ export function VRControlPanel({
         anchorY="middle"
         fontWeight="bold"
       >
-        Scene Controls
+        Control Panel
       </Text>
 
       {/* Save Button */}
-      <group position={[0, 0.15, 0.01]}>
+      <group position={[0, 0.25, 0.01]}>
         <mesh
           onPointerEnter={(e) => {
             e.stopPropagation();
@@ -85,12 +87,47 @@ export function VRControlPanel({
           anchorY="middle"
           fontWeight="bold"
         >
-          {saving ? "Saving..." : "💾 Save"}
+          {saving ? "Saving..." : "Save"}
+        </Text>
+      </group>
+
+      {/* Instruction Button */}
+      <group position={[0, 0.05, 0.01]}>
+        <mesh
+          onPointerEnter={(e) => {
+            e.stopPropagation();
+            setHoveredButton("help");
+          }}
+          onPointerLeave={(e) => {
+            e.stopPropagation();
+            setHoveredButton(null);
+          }}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            onHelp();
+          }}
+        >
+          <planeGeometry args={[buttonWidth, buttonHeight]} />
+          <meshStandardMaterial
+            color={hoveredButton === "help" ? "#9ca3af" : "#88909e"}
+            emissive={hoveredButton === "help" ? "#9ca3af" : "#000000"}
+            emissiveIntensity={hoveredButton === "help" ? 0.5 : 0}
+          />
+        </mesh>
+        <Text
+          position={[0, 0, 0.01]}
+          fontSize={0.06}
+          color="#1e293b"
+          anchorX="center"
+          anchorY="middle"
+          fontWeight="bold"
+        >
+          Help
         </Text>
       </group>
 
       {/* Back Button */}
-      <group position={[0, -0.05, 0.01]}>
+      <group position={[0, -0.15, 0.01]}>
         <mesh
           onPointerEnter={(e) => {
             e.stopPropagation();
@@ -120,12 +157,12 @@ export function VRControlPanel({
           anchorY="middle"
           fontWeight="bold"
         >
-          ← Back to Home
+          Back to Home
         </Text>
       </group>
 
       {/* Logout Button */}
-      <group position={[0, -0.25, 0.01]}>
+      <group position={[0, -0.35, 0.01]}>
         <mesh
           onPointerEnter={(e) => {
             e.stopPropagation();
@@ -155,14 +192,14 @@ export function VRControlPanel({
           anchorY="middle"
           fontWeight="bold"
         >
-          🚪 Logout
+          Logout
         </Text>
       </group>
 
       {/* Helper text */}
       <Text
         position={[0, -panelHeight / 2 + 0.1, 0.01]}
-        fontSize={0.04}
+        fontSize={0.045}
         color="#94a3b8"
         anchorX="center"
         anchorY="middle"

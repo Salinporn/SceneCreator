@@ -195,6 +195,9 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   };
 
   const handleToggleUI = () => {
+    if (showControlPanel) { 
+      setShowControlPanel(false); 
+    }
     if (showInstructions) {
       setShowInstructions(false);
       setShowFurniture(true);
@@ -209,7 +212,17 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   };
 
   const handleToggleControlPanel = () => {
-    setShowControlPanel(!showControlPanel);
+      setShowControlPanel((prev) => {
+      const newState = !prev;
+
+      if (newState) {
+        setShowFurniture(false);
+        setShowSlider(false);
+        setShowInstructions(false);
+      }
+
+      return newState;
+    });
   };
 
   const handleSaveScene = async () => {
@@ -263,6 +276,13 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleHelp = () => {
+    setShowInstructions(true);
+    setShowFurniture(false);
+    setShowSlider(false);
+    setShowControlPanel(false);
   };
 
   const handleBackToHome = () => {
@@ -332,7 +352,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       setShowSlider(true);
 
       console.log("Adding furniture:", f.name, "at position:", spawnPos);
-      
+      setShowFurniture(false);
       return [...prev, newItem];
     });
   };
@@ -457,7 +477,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       <ControlPanelToggle onToggle={handleToggleControlPanel} />
 
       <HeadLockedUI
-        distance={1.5}
+        distance={1.25}
         verticalOffset={0}
         enabled={showInstructions}
       >
@@ -465,7 +485,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       </HeadLockedUI>
 
       <HeadLockedUI
-        distance={1.5}
+        distance={1.3}
         verticalOffset={0}
         enabled={showFurniture}
       >
@@ -479,13 +499,14 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       </HeadLockedUI>
 
       <HeadLockedUI
-        distance={1.5}
+        distance={1.3}
         verticalOffset={0}
         enabled={showControlPanel}
       >
         <VRControlPanel
           show={showControlPanel}
           onSave={handleSaveScene}
+          onHelp={handleHelp}
           onBack={handleBackToHome}
           onLogout={handleLogout}
           saving={saving}

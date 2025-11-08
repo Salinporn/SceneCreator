@@ -2,6 +2,7 @@ import * as React from "react";
 import { Text } from "@react-three/drei";
 import { Furniture } from "../../types/Furniture";
 import { FurnitureImage } from "./FurnitureImage";
+import { RoundedPlane } from "../RoundedPlane";
 
 export function VRFurniturePanel({ 
   show, 
@@ -26,7 +27,7 @@ export function VRFurniturePanel({
   const headerHeight = 0.25;
   const itemHeight = 0.9;
   const topPadding = 0.1;
-  const bottomPadding = 0.15;
+  const bottomPadding = 0.4;
   
   const panelHeight = Math.max(
     2.0,
@@ -40,10 +41,10 @@ export function VRFurniturePanel({
     <group>
       {/* Main background - light theme */}
       <mesh position={[0, 0, -0.02]}>
-        <planeGeometry args={[panelWidth, panelHeight]} />
+        <RoundedPlane width={panelWidth} height={panelHeight} radius={0.1} />
         <meshStandardMaterial 
-          color="#f8fafc" 
-          opacity={0.5} 
+          color="#34495e" 
+          opacity={0.7} 
           transparent 
           roughness={0.7}
         />
@@ -51,9 +52,9 @@ export function VRFurniturePanel({
 
       {/* Header */}
       <Text 
-        position={[0, panelHeight / 2 - 0.13, 0.01]} 
+        position={[0, panelHeight / 2 - 0.18, 0.01]} 
         fontSize={0.1} 
-        color="#1e293b" 
+        color="#ffffff" 
         anchorX="center" 
         anchorY="middle"
         fontWeight="bold"
@@ -67,7 +68,7 @@ export function VRFurniturePanel({
           <Text 
             position={[0, 0, 0]} 
             fontSize={0.06} 
-            color="#64748b" 
+            color="#ffffff" 
             anchorX="center" 
             anchorY="middle"
           >
@@ -78,7 +79,7 @@ export function VRFurniturePanel({
         <Text 
           position={[0, 0, 0.01]} 
           fontSize={0.05} 
-          color="#64748b" 
+          color="#ffffff" 
           anchorX="center" 
           anchorY="middle"
         >
@@ -98,19 +99,10 @@ export function VRFurniturePanel({
             const y = panelHeight / 2 - headerHeight - topPadding - (row * itemHeight) - cardHeight / 2;
 
             const isHovered = hoveredItem === f.id;
-          const isPlaced = placedFurnitureIds.includes(f.id);
+            const isPlaced = placedFurnitureIds.includes(f.id);
 
             return (
               <group key={`${f.id}-${itemIndex}`} position={[x, y, 0.02]}>
-                {/* Card shadow */}
-                <mesh position={[0, 0, -0.001]}>
-                  <planeGeometry args={[cardWidth + 0.015, cardHeight + 0.015]} />
-                  <meshStandardMaterial 
-                    color="#cbd5e1" 
-                    transparent 
-                    opacity={0.3}
-                  />
-                </mesh>
 
                 {/* Card background */}
                 <mesh
@@ -128,13 +120,13 @@ export function VRFurniturePanel({
                     onSelectItem(f); 
                   }}
                 >
-                  <planeGeometry args={[cardWidth, cardHeight]} />
+                  <RoundedPlane width={cardWidth} height={cardHeight} radius={0.04} />
                   <meshStandardMaterial 
                     color={
                       isPlaced 
-                        ? "#e2e8f0"   // greyed if already placed
+                        ? "rgba(143, 207, 250, 1)" 
                         : isHovered 
-                        ? "#e0f2fe"   // blue highlight when hovered
+                        ? "rgba(193, 230, 255, 1)"
                         : "#ffffff"
                     }
                     roughness={0.9}
@@ -143,30 +135,27 @@ export function VRFurniturePanel({
                 </mesh>
 
                 {isPlaced && (
-                  <mesh position={[0, 0, 0.03]}>
-                    <planeGeometry args={[cardWidth + 0.02, cardHeight + 0.02]} />
-                    <meshBasicMaterial color="#22c55e" transparent opacity={0.5} />
+                  <mesh position={[0, 0.09, 0.03]}>
+                    <planeGeometry args={[0.5, 0.5]} />
+                    <meshBasicMaterial color="rgba(143, 207, 250, 1)" transparent opacity={0.5} />
                   </mesh>
                 )}
 
-                {isPlaced && (
+
+                {/* {isPlaced && (
                   <Text
-                    position={[0, -0.38, 0.05]}
-                    fontSize={0.045}
-                    color="#16a34a"
+                    position={[0, 0.1, 0.05]}
+                    fontSize={0.05}
+                    color="rgba(233, 246, 255, 1)"
                     anchorX="center"
                     anchorY="middle"
                     fontWeight="600"
                   >
-                    ✓ Placed
+                    Placed
                   </Text>
-                )}
+                )} */}
 
                 <group position={[0, 0.08, 0.01]}>
-                  <mesh position={[0, 0, -0.001]}>
-                    <planeGeometry args={[0.5, 0.5]} />
-                    <meshBasicMaterial color="#f1f5f9" />
-                  </mesh>
                   
                   {f.image ? (
                     <mesh>
@@ -178,8 +167,8 @@ export function VRFurniturePanel({
                       <planeGeometry args={[0.48, 0.48]} />
                       <meshStandardMaterial color="#d0d6dd" />
                       <Text 
-                        fontSize={0.04} 
-                        color="#7d8899" 
+                        fontSize={0.05} 
+                        color="#ffffff" 
                         anchorX="center" 
                         anchorY="middle"
                       >
@@ -194,7 +183,7 @@ export function VRFurniturePanel({
                     <mesh>
                       <planeGeometry args={[0.24, 0.07]} />
                       <meshStandardMaterial 
-                        color="#333333" 
+                        color="#2c3e50" 
                         roughness={0.5}
                       />
                     </mesh>
@@ -204,7 +193,7 @@ export function VRFurniturePanel({
                       color="#ffffff"
                       anchorX="center"
                       anchorY="middle"
-                      fontWeight="500"
+                      fontWeight="600"
                     >
                       {f.type}
                     </Text>

@@ -9,7 +9,6 @@ export function VRControlPanel({
   onBack,
   onLogout,
   saving = false,
-  onClose
 }: {
   show: boolean;
   onSave: () => void;

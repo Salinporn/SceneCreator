@@ -9,7 +9,7 @@ import { VRFurniturePanel } from "../panel/furniture/FurniturePanel";
 import { VRSlider } from "../panel/VRSlider";
 import { HeadLockedUI } from "../panel/common/HeadLockedUI";
 import { VRControlPanel } from "../panel/control/ControlPanel";
-import { ControlPanelToggle } from "../panel/control/ControlPanelTogggle";
+import { ControlPanelToggle } from "../panel/control/ControlPanelToggle";
 import { VRNotificationPanel } from "../panel/common/NotificationPanel";
 import { HomeModel } from "./HomeModel";
 import { PlacedFurniture, SpawnManager } from "./FurnitureController";
@@ -56,14 +56,14 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   const [furnitureCatalog, setFurnitureCatalog] = React.useState<Furniture[]>([]);
   const [catalogLoading, setCatalogLoading] = React.useState(false);
   const [modelUrlCache, setModelUrlCache] = React.useState<Map<number, string>>(new Map());
-  
-  // Notification state
+
   const [showNotification, setShowNotification] = React.useState(false);
   const [notificationMessage, setNotificationMessage] = React.useState("");
   const [notificationType, setNotificationType] = React.useState<"success" | "error" | "info">("info");
-  
+
 
   const showNotificationMessage = (message: string, type: "success" | "error" | "info" = "info") => {
+    setShowControlPanel(false);
     setNotificationMessage(message);
     setNotificationType(type);
     setShowNotification(true);
@@ -75,7 +75,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     }
   }, [showControlPanel, showInstructions, showFurniture]);
 
-    useEffect(() => {
+  useEffect(() => {
     if (digitalHome?.spatialData?.boundary) {
       collisionDetector.setRoomBoundary(digitalHome.spatialData.boundary);
     }
@@ -216,8 +216,8 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   };
 
   const handleToggleUI = () => {
-    if (showControlPanel) { 
-      setShowControlPanel(false); 
+    if (showControlPanel) {
+      setShowControlPanel(false);
     }
     if (showInstructions) {
       setShowInstructions(false);
@@ -233,7 +233,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     }
   };
   const handleToggleControlPanel = () => {
-      setShowControlPanel((prev) => {
+    setShowControlPanel((prev) => {
       const newState = !prev;
 
       if (newState) {
@@ -339,14 +339,14 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
 
       if (existingIndex !== -1) {
         console.log("Removing furniture:", f.name);
-        
+
         if (selectedItemIndex === existingIndex) {
           setSelectedItemIndex(null);
           setShowSlider(false);
         } else if (selectedItemIndex !== null && selectedItemIndex > existingIndex) {
           setSelectedItemIndex(selectedItemIndex - 1);
         }
-        
+
         return prev.filter((_, index) => index !== existingIndex);
       }
 
@@ -587,7 +587,10 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
           show={showNotification}
           message={notificationMessage}
           type={notificationType}
-          onClose={() => setShowNotification(false)}
+          onClose={() => {
+            setShowNotification(false);
+            setShowControlPanel(true);
+          }}
         />
       </HeadLockedUI>
     </>

@@ -45,7 +45,7 @@ function DraggableFurniture({
 
     const box = new THREE.Box3().setFromObject(clonedScene);
     const minY = box.min.y;
-    
+
     setModelHeight(-minY);
     clonedScene.position.y = -minY;
     modelRef.current.add(clonedScene);
@@ -54,18 +54,18 @@ function DraggableFurniture({
   // Update collision detection when position changes
   React.useEffect(() => {
     if (!groupRef.current) return;
-    
+
     const itemId = `${item.id}`;
     collisionDetector.updateFurnitureBox(itemId, groupRef.current);
-    
+
     // Check for collisions
     const collision = collisionDetector.checkAllCollisions(itemId);
     setHasCollision(collision.hasCollision);
-    
+
     if (onCollisionDetected) {
       onCollisionDetected(collision.hasCollision);
     }
-    
+
     if (collision.hasCollision) {
       console.warn('⚠️ Collision detected for', item.name, ':', collision.collidingObjects);
     }
@@ -80,17 +80,18 @@ function DraggableFurniture({
 
   useFrame((_state, delta) => {
     // Disable furniture editing when in navigation mode
-    if (navigationMode || !isSelected || !groupRef.current || !isPresenting) return; 
-
+    if (navigationMode || !isSelected || !groupRef.current || !isPresenting) return;
+    const { gl } = _state;
+    const xrFrame = gl.xr.getFrame();
     const session = xr.session;
     const referenceSpace = xr.originReferenceSpace;
-    if (!session || !referenceSpace) return;
+    if (!session || !referenceSpace || !xrFrame) return;
 
     const inputSources = session.inputSources;
     if (!inputSources || inputSources.length === 0) return;
 
     const moveSpeed = 1.5;
-    const rotateSpeed = 1.5; 
+    const rotateSpeed = 1.5;
     const deadzone = 0.1;
     const moveVector = new THREE.Vector3(0, 0, 0);
     let rotateDelta = 0;
@@ -98,6 +99,35 @@ function DraggableFurniture({
     for (const inputSource of inputSources) {
       const gamepad = inputSource.gamepad;
       if (!gamepad || gamepad.axes.length < 4) continue;
+
+      if (isSelected) {
+        for (const inputSource of session.inputSources) {
+          const gamepad = inputSource.gamepad;
+          if (!gamepad || !gamepad.buttons) continue;
+
+          const gripButton = gamepad.buttons[1];
+          if (gripButton?.pressed && inputSource.targetRaySpace) {
+            const targetPose = xrFrame.getPose(inputSource.targetRaySpace, referenceSpace);
+            if (!targetPose) continue;
+
+            const { position, orientation } = targetPose.transform;
+
+            const origin = new THREE.Vector3(position.x, position.y, position.z);
+            const direction = new THREE.Vector3(0, 0, -1)
+              .applyQuaternion(new THREE.Quaternion(orientation.x, orientation.y, orientation.z, orientation.w))
+              .normalize();
+
+            const raycaster = new THREE.Raycaster(origin, direction);
+            const intersects = raycaster.intersectObject(groupRef.current, true);
+
+            if (intersects.length > 0) {
+              // Deselect this furniture
+              onSelect();
+              return;
+            }
+          }
+        }
+      }
 
       if (inputSource.handedness === 'right') {
         const dx = gamepad.axes[2];
@@ -137,7 +167,7 @@ function DraggableFurniture({
       const tempPosition = groupRef.current.position.clone();
       groupRef.current.position.copy(newPosition);
       collisionDetector.updateFurnitureBox(itemId, groupRef.current);
-      
+
       const collision = collisionDetector.checkAllCollisions(itemId);
 
       if (!collision.hasCollision) {
@@ -151,7 +181,7 @@ function DraggableFurniture({
           groupRef.current,
           4
         );
-        
+
         if (validPosition) {
           onPositionChange([validPosition.x, 0, validPosition.z]);
         } else {
@@ -185,16 +215,16 @@ function DraggableFurniture({
       onPointerDown={handleSelect}
     >
       <group ref={modelRef} />
-      
+
       {isSelected && !navigationMode && (
         <>
           <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[0.3, 0.35, 32]} />
-            <meshBasicMaterial 
-              color={hasCollision ? "#ff0000" : "#00ff00"} 
-              transparent 
-              opacity={0.7} 
-              side={THREE.DoubleSide} 
+            <meshBasicMaterial
+              color={hasCollision ? "#ff0000" : "#00ff00"}
+              transparent
+              opacity={0.7}
+              side={THREE.DoubleSide}
             />
           </mesh>
           <mesh position={[0, 0.01, 0.35]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -207,23 +237,23 @@ function DraggableFurniture({
       {hasCollision && !isSelected && (
         <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.25, 0.3, 32]} />
-          <meshBasicMaterial 
-            color="#ff6600" 
-            transparent 
-            opacity={0.5} 
-            side={THREE.DoubleSide} 
+          <meshBasicMaterial
+            color="#ff6600"
+            transparent
+            opacity={0.5}
+            side={THREE.DoubleSide}
           />
         </mesh>
       )}
     </group>
   );
 }
- 
-export function PlacedFurniture({ 
-  items, 
-  selectedIndex, 
-  onSelectItem, 
-  onUpdatePosition, 
+
+export function PlacedFurniture({
+  items,
+  selectedIndex,
+  onSelectItem,
+  onUpdatePosition,
   onUpdateRotation,
   navigationMode = false,
   uiLocked = false,
@@ -254,30 +284,30 @@ export function PlacedFurniture({
   );
 }
 
-export function SpawnManager({ 
-  spawnPositionRef 
-}: { 
+export function SpawnManager({
+  spawnPositionRef
+}: {
   spawnPositionRef: React.MutableRefObject<[number, number, number]>
 }) {
   const camera = useThree((state) => state.camera);
-  
+
   useFrame(() => {
     if (!camera) return;
-    
+
     const cameraWorldPos = new THREE.Vector3();
     camera.getWorldPosition(cameraWorldPos);
-    
+
     const cameraDirection = new THREE.Vector3();
     camera.getWorldDirection(cameraDirection);
-    
+
     const spawnDistance = 2;
     const spawnPos = cameraWorldPos.clone();
     spawnPos.addScaledVector(cameraDirection, spawnDistance);
-    
+
     spawnPos.y = 0;
-    
+
     spawnPositionRef.current = [spawnPos.x, 0, spawnPos.z];
   });
-  
+
   return null;
 }

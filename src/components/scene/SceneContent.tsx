@@ -425,8 +425,15 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   };
 
   const handleSelectItem = (index: number) => {
+    if (selectedItemIndex === index) {
+      setSelectedItemIndex(null);
+      setShowSlider(false);
+      return;
+    }
+
     setSelectedItemIndex(index);
     setShowSlider(true);
+
     if (placedItems[index]?.rotation) {
       const twoPi = Math.PI * 2;
       let normalizedRotation = placedItems[index].rotation![1] % twoPi;

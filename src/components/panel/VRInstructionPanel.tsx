@@ -25,6 +25,7 @@ const sections = [
     color: "#7C3AED",
     content: [
       "Trigger: Select furniture from menu or scene",
+      "Grip: Deselect selected furniture",
       "Right Thumbstick: Move selected item",
       "Left Thumbstick: Rotate selected item",
       "Use sliders to adjust scale & rotation",

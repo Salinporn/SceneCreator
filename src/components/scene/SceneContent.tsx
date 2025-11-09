@@ -307,20 +307,21 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   };
 
   const handleBackToHome = async () => {
-    // Exit VR mode first if currently in VR
-    if (xrStore.session) {
+    const session = xrStore.getState().session;
+
+    if (session) {
       try {
-        await xrStore.exitVR();
-        // Wait a bit for VR to fully exit
+        await session.end();
+
         setTimeout(() => {
-          navigate('/');
+          navigate("/");
         }, 300);
       } catch (error) {
-        console.error('Error exiting VR:', error);
-        navigate('/');
+        console.error("Error exiting VR session:", error);
+        navigate("/");
       }
     } else {
-      navigate('/');
+      navigate("/");
     }
   };
 

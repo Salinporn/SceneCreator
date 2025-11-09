@@ -20,7 +20,7 @@ export function VRNotificationPanel({
   if (!show) return null;
 
   const panelWidth = 0.9;
-  const panelHeight = 0.4;
+  const panelHeight = 0.5;
 
   // Color scheme based on notification type
   const colors = {
@@ -66,9 +66,9 @@ export function VRNotificationPanel({
       </mesh>
 
       {/* Icon */}
-      <group position={[0, 0.1, 0.01]}>
+      <group position={[0, 0.13, 0.01]}>
         <mesh>
-          <circleGeometry args={[0.05, 16]} />
+          <circleGeometry args={[0.06, 16]} />
           <meshStandardMaterial
             color={colorScheme.iconColor}
             opacity={0.2}
@@ -77,7 +77,7 @@ export function VRNotificationPanel({
         </mesh>
         <Text
           position={[0, 0, 0.01]}
-          fontSize={0.04}
+          fontSize={0.05}
           color={colorScheme.iconColor}
           anchorX="center"
           anchorY="middle"
@@ -89,7 +89,7 @@ export function VRNotificationPanel({
 
       {/* Message */}
       <Text
-        position={[0, 0, 0.01]}
+        position={[0, -0.01, 0.01]}
         fontSize={0.04}
         color="#334155"
         anchorX="center"
@@ -103,7 +103,7 @@ export function VRNotificationPanel({
 
       {/* OK Button */}
       <group
-        position={[0, -0.12, 0.01]}
+        position={[0, -0.15, 0.01]}
         onPointerEnter={(e) => {
           e.stopPropagation();
           setHoveredButton(true);
@@ -127,18 +127,18 @@ export function VRNotificationPanel({
         </mesh>
         <Text
           position={[0, 0, 0.01]}
-          fontSize={0.05}
-          color="#FFFFFF"
+          fontSize={0.045}
+          color="#334155"
           anchorX="center"
           anchorY="middle"
-          fontWeight="600"
+          fontWeight="semi-bold"
         >
           OK
         </Text>
       </group>
 
       {/* Button shadow */}
-      <group position={[0, -0.13, 0]}>
+      <group position={[0, -0.16, 0]}>
         <mesh>
           <RoundedPlane width={0.25} height={0.1} radius={0.03} />
           <meshStandardMaterial

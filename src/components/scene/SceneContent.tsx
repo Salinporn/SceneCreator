@@ -61,6 +61,12 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   const [notificationMessage, setNotificationMessage] = React.useState("");
   const [notificationType, setNotificationType] = React.useState<"success" | "error" | "info">("info");
 
+  const uiLocked = showFurniture ||
+    showControlPanel ||
+    showInstructions ||
+    showSlider ||
+    showNotification;
+
 
   const showNotificationMessage = (message: string, type: "success" | "error" | "info" = "info") => {
     setShowControlPanel(false);
@@ -506,6 +512,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
           onUpdatePosition={handleUpdateItemPosition}
           onUpdateRotation={handleUpdateItemRotation}
           navigationMode={navigationMode}
+          uiLocked={uiLocked}
         />
       </group>
 

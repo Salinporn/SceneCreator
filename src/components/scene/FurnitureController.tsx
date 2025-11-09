@@ -14,6 +14,7 @@ interface DraggableFurnitureProps {
   onRotationChange: (newRotation: [number, number, number]) => void;
   onCollisionDetected?: (hasCollision: boolean) => void;
   navigationMode: boolean;
+  disabledSelection?: boolean;
 }
 
 function DraggableFurniture({
@@ -24,6 +25,7 @@ function DraggableFurniture({
   onRotationChange,
   onCollisionDetected,
   navigationMode,
+  disabledSelection = false,
 }: DraggableFurnitureProps) {
   const groupRef = React.useRef<THREE.Group>(null);
   const modelRef = React.useRef<THREE.Group>(null);
@@ -169,7 +171,7 @@ function DraggableFurniture({
   });
 
   const handleSelect = (e: ThreeEvent<PointerEvent>) => {
-    if (navigationMode) return;
+    if (navigationMode || disabledSelection) return;
     e.stopPropagation();
     onSelect();
   };
@@ -224,6 +226,7 @@ export function PlacedFurniture({
   onUpdatePosition, 
   onUpdateRotation,
   navigationMode = false,
+  uiLocked = false,
 }: {
   items: PlacedItem[];
   selectedIndex: number | null;
@@ -231,6 +234,7 @@ export function PlacedFurniture({
   onUpdatePosition: (index: number, newPosition: [number, number, number]) => void;
   onUpdateRotation: (index: number, newRotation: [number, number, number]) => void;
   navigationMode?: boolean;
+  uiLocked?: boolean;
 }) {
   return (
     <>
@@ -243,6 +247,7 @@ export function PlacedFurniture({
           onPositionChange={(newPosition) => onUpdatePosition(index, newPosition)}
           onRotationChange={(newRotation) => onUpdateRotation(index, newRotation)}
           navigationMode={navigationMode}
+          disabledSelection={uiLocked}
         />
       ))}
     </>

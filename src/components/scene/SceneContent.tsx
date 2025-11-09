@@ -481,11 +481,11 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
         verticalOffset={0}
         enabled={showInstructions}
       >
-        <VRInstructionPanel show={showInstructions} />
+        <VRInstructionPanel show={showInstructions} onClose={() => setShowInstructions(false)} />
       </HeadLockedUI>
 
       <HeadLockedUI
-        distance={1.3}
+        distance={1.26}
         verticalOffset={0}
         enabled={showFurniture}
       >
@@ -510,6 +510,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
           onBack={handleBackToHome}
           onLogout={handleLogout}
           saving={saving}
+          onClose={() => setShowControlPanel(false)}
         />
       </HeadLockedUI>
 

@@ -9,6 +9,7 @@ export function VRControlPanel({
   onBack,
   onLogout,
   saving = false,
+  onClose
 }: {
   show: boolean;
   onSave: () => void;
@@ -16,6 +17,7 @@ export function VRControlPanel({
   onBack: () => void;
   onLogout: () => void;
   saving?: boolean;
+  onClose: () => void;
 }) {
   const [hoveredButton, setHoveredButton] = React.useState<string | null>(null);
 
@@ -53,7 +55,7 @@ export function VRControlPanel({
         anchorY="middle"
         fontWeight="semi-bold"
       >
-        ☰ Options
+        ☰ Control Panel
       </Text>
 
       {/* Save Button */}
@@ -97,6 +99,12 @@ export function VRControlPanel({
         </Text>
       </group>
 
+      <group position={[0, 0.24, 0]}>
+        <mesh>
+          <ButtonBackground width={buttonWidth} height={buttonHeight} radius={0.03} colorTop="#000000" colorBottom="#000000" opacity={0.15} />
+        </mesh>
+      </group>
+
       {/* Instruction Button */}
       <group position={[0, 0.05, 0.01]}>
         <mesh
@@ -130,6 +138,12 @@ export function VRControlPanel({
         >
           Help
         </Text>
+      </group>
+
+      <group position={[0, 0.04, 0]}>
+        <mesh>
+          <ButtonBackground width={buttonWidth} height={buttonHeight} radius={0.03} colorTop="#000000" colorBottom="#000000" opacity={0.15} />
+        </mesh>
       </group>
 
       {/* Back Button */}
@@ -167,6 +181,12 @@ export function VRControlPanel({
         </Text>
       </group>
 
+      <group position={[0, -0.16, 0]}>
+        <mesh>
+          <ButtonBackground width={buttonWidth} height={buttonHeight} radius={0.03} colorTop="#000000" colorBottom="#000000" opacity={0.15} />
+        </mesh>
+      </group>
+
       {/* Logout Button */}
       <group position={[0, -0.35, 0.01]}>
         <mesh
@@ -200,6 +220,12 @@ export function VRControlPanel({
         >
           Logout
         </Text>
+      </group>
+
+      <group position={[0, -0.36, 0]}>
+        <mesh>
+          <ButtonBackground width={buttonWidth} height={buttonHeight} radius={0.03} colorTop="#000000" colorBottom="#000000" opacity={0.15} />
+        </mesh>
       </group>
 
       {/* Helper text */}

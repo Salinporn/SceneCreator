@@ -45,7 +45,7 @@ export function VRFurniturePanel({
       </mesh>
 
       {/** Background Shadow */}
-      <mesh position={[0, 0, -0.03]}>
+      <mesh position={[0, -0.01, -0.03]}>
         <RoundedPlane width={panelWidth} height={panelHeight} radius={0.1} />
         <meshStandardMaterial
           color="#000000"
@@ -73,7 +73,7 @@ export function VRFurniturePanel({
           <Text
             position={[0, 0, 0]}
             fontSize={0.06}
-            color="#000000"
+            color="#334155"
             anchorX="center"
             anchorY="middle"
           >
@@ -84,7 +84,7 @@ export function VRFurniturePanel({
         <Text
           position={[0, 0, 0.01]}
           fontSize={0.05}
-          color="#000000"
+          color="#334155"
           anchorX="center"
           anchorY="middle"
         >
@@ -137,7 +137,7 @@ export function VRFurniturePanel({
                 </mesh>
 
                 {/* Card background Shadow */}
-                <mesh position={[0, 0, -0.01]}>
+                <mesh position={[0, -0.01, -0.01]}>
                   <RoundedPlane width={cardWidth} height={cardHeight} radius={0.04} />
                   <meshStandardMaterial
                     color="#000000"
@@ -160,7 +160,7 @@ export function VRFurniturePanel({
                       <meshStandardMaterial color="#d0d6dd" />
                       <Text
                         fontSize={0.04}
-                        color="#ffffff"
+                        color="#334155"
                         anchorX="center"
                         anchorY="middle"
                       >
@@ -175,14 +175,14 @@ export function VRFurniturePanel({
                     <mesh>
                       <planeGeometry args={[0.2, 0.07]} />
                       <meshStandardMaterial
-                        color= { isPlaced ? "#A5D1E7" : "#66B9E2" }
+                        color="#66B9E2"
                         roughness={0.5}
                       />
                     </mesh>
                     <Text
                       position={[0, 0, 0.001]}
                       fontSize={0.041}
-                      color="#ffffff"
+                      color="#334155"
                       anchorX="center"
                       anchorY="middle"
                       fontWeight="600"

@@ -6,7 +6,7 @@ import { CatalogToggle } from "../panel/furniture/FurnitureCatalogToggle";
 import { VRInstructionPanel } from "../panel/VRInstructionPanel";
 import { VRFurniturePanel } from "../panel/furniture/FurniturePanel";
 import { VRSlider } from "../panel/VRSlider";
-import { HeadLockedUI } from "../panel/HeadLockedUI";
+import { HeadLockedUI } from "../panel/common/HeadLockedUI";
 import { VRControlPanel } from "../panel/control/ControlPanel";
 import { ControlPanelToggle } from "../panel/control/ControlPanelTogggle";
 import { HomeModel } from "./HomeModel";

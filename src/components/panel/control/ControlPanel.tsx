@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Text } from "@react-three/drei";
+import { RoundedPlane, GradientBackground, ButtonBackground } from "../common/PanelElements";
 
 export function VRControlPanel({
   show,
@@ -11,7 +12,7 @@ export function VRControlPanel({
 }: {
   show: boolean;
   onSave: () => void;
-  onHelp: () => void; 
+  onHelp: () => void;
   onBack: () => void;
   onLogout: () => void;
   saving?: boolean;
@@ -20,34 +21,39 @@ export function VRControlPanel({
 
   if (!show) return null;
 
-  const panelWidth = 1.8;
-  const panelHeight = 1.2;
-  const buttonWidth = 0.6;
+  const panelWidth = 1;
+  const panelHeight = 1.15;
+  const buttonWidth = 0.7;
   const buttonHeight = 0.15;
 
   return (
     <group>
       {/* Main background panel */}
       <mesh position={[0, 0, -0.02]}>
-        <planeGeometry args={[panelWidth, panelHeight]} />
+        <GradientBackground width={panelWidth} height={panelHeight} radius={0.1} color1="#EAF4FA" color2="#F0F2F5" opacity={0.7} />
+      </mesh>
+
+      {/** Background Shadow */}
+      <mesh position={[0, 0, -0.03]}>
+        <RoundedPlane width={panelWidth} height={panelHeight} radius={0.1} />
         <meshStandardMaterial
-          color="#1e293b"
-          opacity={0.95}
+          color="#000000"
+          opacity={0.15}
           transparent
-          roughness={0.7}
+          roughness={1.0}
         />
       </mesh>
 
       {/* Header */}
       <Text
         position={[0, panelHeight / 2 - 0.15, 0.01]}
-        fontSize={0.08}
-        color="#f1f5f9"
+        fontSize={0.075}
+        color="#334155"
         anchorX="center"
         anchorY="middle"
-        fontWeight="bold"
+        fontWeight="semi-bold"
       >
-        Control Panel
+        ☰ Options
       </Text>
 
       {/* Save Button */}
@@ -66,26 +72,26 @@ export function VRControlPanel({
             if (!saving) onSave();
           }}
         >
-          <planeGeometry args={[buttonWidth, buttonHeight]} />
+          <RoundedPlane width={buttonWidth} height={buttonHeight} radius={0.03} />
           <meshStandardMaterial
             color={
               saving
-                ? "#64748b"
+                ? "#3FA4CE"
                 : hoveredButton === "save"
-                ? "#22c55e"
-                : "#10b981"
+                  ? "#66B9E2"
+                  : "#3FA4CE"
             }
-            emissive={hoveredButton === "save" ? "#16a34a" : "#000000"}
-            emissiveIntensity={hoveredButton === "save" ? 0.5 : 0}
+            emissive={hoveredButton === "save" ? "#66B9E2" : "#66B9E2"}
+            emissiveIntensity={hoveredButton === "save" ? 0.5 : 0.3}
           />
         </mesh>
         <Text
           position={[0, 0, 0.01]}
           fontSize={0.06}
-          color="#1e293b"
+          color="#334155"
           anchorX="center"
           anchorY="middle"
-          fontWeight="bold"
+          fontWeight={550}
         >
           {saving ? "Saving..." : "Save"}
         </Text>
@@ -107,20 +113,20 @@ export function VRControlPanel({
             onHelp();
           }}
         >
-          <planeGeometry args={[buttonWidth, buttonHeight]} />
+          <RoundedPlane width={buttonWidth} height={buttonHeight} radius={0.03} />
           <meshStandardMaterial
-            color={hoveredButton === "help" ? "#9ca3af" : "#88909e"}
-            emissive={hoveredButton === "help" ? "#9ca3af" : "#000000"}
-            emissiveIntensity={hoveredButton === "help" ? 0.5 : 0}
+            color={hoveredButton === "help" ? "#A5D1E7" : "#66B9E2"}
+            emissive={hoveredButton === "help" ? "#66B9E2" : "#66B9E2"}
+            emissiveIntensity={hoveredButton === "help" ? 0.5 : 0.3}
           />
         </mesh>
         <Text
           position={[0, 0, 0.01]}
           fontSize={0.06}
-          color="#1e293b"
+          color="#334155"
           anchorX="center"
           anchorY="middle"
-          fontWeight="bold"
+          fontWeight={550}
         >
           Help
         </Text>
@@ -142,20 +148,20 @@ export function VRControlPanel({
             onBack();
           }}
         >
-          <planeGeometry args={[buttonWidth, buttonHeight]} />
+          <RoundedPlane width={buttonWidth} height={buttonHeight} radius={0.03} />
           <meshStandardMaterial
-            color={hoveredButton === "back" ? "#3b82f6" : "#2563eb"}
-            emissive={hoveredButton === "back" ? "#1d4ed8" : "#000000"}
-            emissiveIntensity={hoveredButton === "back" ? 0.5 : 0}
+            color={hoveredButton === "back" ? "#A5D1E7" : "#66B9E2"}
+            emissive={hoveredButton === "back" ? "#66B9E2" : "#66B9E2"}
+            emissiveIntensity={hoveredButton === "back" ? 0.5 : 0.3}
           />
         </mesh>
         <Text
           position={[0, 0, 0.01]}
           fontSize={0.06}
-          color="#1e293b"
+          color="#334155"
           anchorX="center"
           anchorY="middle"
-          fontWeight="bold"
+          fontWeight={550}
         >
           Back to Home
         </Text>
@@ -177,20 +183,20 @@ export function VRControlPanel({
             onLogout();
           }}
         >
-          <planeGeometry args={[buttonWidth, buttonHeight]} />
+          <RoundedPlane width={buttonWidth} height={buttonHeight} radius={0.03} />
           <meshStandardMaterial
-            color={hoveredButton === "logout" ? "#dc2626" : "#ef4444"}
-            emissive={hoveredButton === "logout" ? "#b91c1c" : "#000000"}
-            emissiveIntensity={hoveredButton === "logout" ? 0.5 : 0}
+            color={hoveredButton === "logout" ? "#FF8F8F" : "#fd7171"}
+            emissive={hoveredButton === "logout" ? "#fd7171" : "#fd7171"}
+            emissiveIntensity={hoveredButton === "logout" ? 0.5 : 0.3}
           />
         </mesh>
         <Text
           position={[0, 0, 0.01]}
           fontSize={0.06}
-          color="#1e293b"
+          color="#334155"
           anchorX="center"
           anchorY="middle"
-          fontWeight="bold"
+          fontWeight={550}
         >
           Logout
         </Text>
@@ -200,7 +206,7 @@ export function VRControlPanel({
       <Text
         position={[0, -panelHeight / 2 + 0.1, 0.01]}
         fontSize={0.045}
-        color="#94a3b8"
+        color="#334155"
         anchorX="center"
         anchorY="middle"
       >

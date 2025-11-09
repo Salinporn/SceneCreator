@@ -32,7 +32,7 @@ export function FurnitureImage({ image }: { image: string }) {
     return (
       <mesh>
         <planeGeometry args={[0.35, 0.35]} />
-        <meshBasicMaterial color="#e2e8f0" />
+        <meshBasicMaterial color="#F0F2F5" />
       </mesh>
     );
   }

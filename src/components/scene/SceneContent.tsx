@@ -2,13 +2,15 @@ import * as React from "react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Environment, PerspectiveCamera } from "@react-three/drei";
+import { useXRStore } from "@react-three/xr";
 import { CatalogToggle } from "../panel/furniture/FurnitureCatalogToggle";
 import { VRInstructionPanel } from "../panel/VRInstructionPanel";
 import { VRFurniturePanel } from "../panel/furniture/FurniturePanel";
 import { VRSlider } from "../panel/VRSlider";
-import { HeadLockedUI } from "../panel/HeadLockedUI";
+import { HeadLockedUI } from "../panel/common/HeadLockedUI";
 import { VRControlPanel } from "../panel/control/ControlPanel";
-import { ControlPanelToggle } from "../panel/control/ControlPanelTogggle";
+import { ControlPanelToggle } from "../panel/control/ControlPanelToggle";
+import { VRNotificationPanel } from "../panel/common/NotificationPanel";
 import { HomeModel } from "./HomeModel";
 import { PlacedFurniture, SpawnManager } from "./FurnitureController";
 import { NavigationController } from "./NavigationController";
@@ -37,13 +39,14 @@ interface SceneContentProps {
 
 export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   const navigate = useNavigate();
+  const xrStore = useXRStore();
   const [showSlider, setShowSlider] = React.useState(false);
   const [showFurniture, setShowFurniture] = React.useState(false);
   const [showInstructions, setShowInstructions] = React.useState(true);
   const [showControlPanel, setShowControlPanel] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [_loading, setLoading] = React.useState(true);
-  const [sliderValue, setSliderValue] = React.useState(0.5);
+  const [sliderValue, setSliderValue] = React.useState(1.0);
   const [rotationValue, setRotationValue] = React.useState(0);
   const [navigationMode, setNavigationMode] = React.useState(false);
   const [placedItems, setPlacedItems] = React.useState<PlacedItem[]>([]);
@@ -53,7 +56,25 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   const [furnitureCatalog, setFurnitureCatalog] = React.useState<Furniture[]>([]);
   const [catalogLoading, setCatalogLoading] = React.useState(false);
   const [modelUrlCache, setModelUrlCache] = React.useState<Map<number, string>>(new Map());
-  
+
+  const [showNotification, setShowNotification] = React.useState(false);
+  const [notificationMessage, setNotificationMessage] = React.useState("");
+  const [notificationType, setNotificationType] = React.useState<"success" | "error" | "info">("info");
+
+
+  const showNotificationMessage = (message: string, type: "success" | "error" | "info" = "info") => {
+    setShowControlPanel(false);
+    setNotificationMessage(message);
+    setNotificationType(type);
+    setShowNotification(true);
+  };
+
+  React.useEffect(() => {
+    if (showControlPanel || showInstructions || showFurniture) {
+      setShowSlider(false);
+    }
+  }, [showControlPanel, showInstructions, showFurniture]);
+
   useEffect(() => {
     if (digitalHome?.spatialData?.boundary) {
       collisionDetector.setRoomBoundary(digitalHome.spatialData.boundary);
@@ -195,21 +216,34 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   };
 
   const handleToggleUI = () => {
+    if (showControlPanel) {
+      setShowControlPanel(false);
+    }
     if (showInstructions) {
       setShowInstructions(false);
       setShowFurniture(true);
-      setShowSlider(true);
     } else if (showFurniture) {
       setShowFurniture(false);
-      setShowSlider(false);
+      if (selectedItemIndex !== null) {
+        setShowSlider(true);
+      }
     } else {
       setShowFurniture(true);
-      setShowSlider(true);
+      setShowSlider(false);
     }
   };
-
   const handleToggleControlPanel = () => {
-    setShowControlPanel(!showControlPanel);
+    setShowControlPanel((prev) => {
+      const newState = !prev;
+
+      if (newState) {
+        setShowFurniture(false);
+        setShowSlider(false);
+        setShowInstructions(false);
+      }
+
+      return newState;
+    });
   };
 
   const handleSaveScene = async () => {
@@ -252,21 +286,43 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       );
 
       if (response.ok) {
-        alert('Scene saved successfully!');
+        showNotificationMessage('Scene saved successfully!', 'success');
       } else {
         const error = await response.json();
-        alert(`Failed to save scene: ${error.error}`);
+        showNotificationMessage(`Failed to save scene: ${error.error}`, 'error');
       }
     } catch (error) {
       console.error('Error saving scene:', error);
-      alert('Error saving scene. Please try again.');
+      showNotificationMessage('Error saving scene. Please try again.', 'error');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleBackToHome = () => {
-    navigate('/');
+  const handleHelp = () => {
+    setShowInstructions(true);
+    setShowFurniture(false);
+    setShowSlider(false);
+    setShowControlPanel(false);
+  };
+
+  const handleBackToHome = async () => {
+    const session = xrStore.getState().session;
+
+    if (session) {
+      try {
+        await session.end();
+
+        setTimeout(() => {
+          navigate("/");
+        }, 300);
+      } catch (error) {
+        console.error("Error exiting VR session:", error);
+        navigate("/");
+      }
+    } else {
+      navigate("/");
+    }
   };
 
   const handleLogout = async () => {
@@ -284,14 +340,14 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
 
       if (existingIndex !== -1) {
         console.log("Removing furniture:", f.name);
-        
+
         if (selectedItemIndex === existingIndex) {
           setSelectedItemIndex(null);
           setShowSlider(false);
         } else if (selectedItemIndex !== null && selectedItemIndex > existingIndex) {
           setSelectedItemIndex(selectedItemIndex - 1);
         }
-        
+
         return prev.filter((_, index) => index !== existingIndex);
       }
 
@@ -332,7 +388,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       setShowSlider(true);
 
       console.log("Adding furniture:", f.name, "at position:", spawnPos);
-      
+      setShowFurniture(false);
       return [...prev, newItem];
     });
   };
@@ -457,15 +513,15 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       <ControlPanelToggle onToggle={handleToggleControlPanel} />
 
       <HeadLockedUI
-        distance={1.5}
+        distance={1.25}
         verticalOffset={0}
         enabled={showInstructions}
       >
-        <VRInstructionPanel show={showInstructions} />
+        <VRInstructionPanel show={showInstructions} onClose={() => setShowInstructions(false)} />
       </HeadLockedUI>
 
       <HeadLockedUI
-        distance={1.5}
+        distance={1.26}
         verticalOffset={0}
         enabled={showFurniture}
       >
@@ -479,16 +535,18 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       </HeadLockedUI>
 
       <HeadLockedUI
-        distance={1.5}
+        distance={1.3}
         verticalOffset={0}
         enabled={showControlPanel}
       >
         <VRControlPanel
           show={showControlPanel}
           onSave={handleSaveScene}
+          onHelp={handleHelp}
           onBack={handleBackToHome}
           onLogout={handleLogout}
           saving={saving}
+          onClose={() => setShowControlPanel(false)}
         />
       </HeadLockedUI>
 
@@ -504,7 +562,8 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
             label="Scale"
             min={0.1}
             max={2}
-            position={[0, -0.8, 0]}
+            position={[0, 0.4, 0]}
+            onClose={() => setShowSlider(false)}
           />
           <VRSlider
             show={null}
@@ -515,8 +574,25 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
             max={Math.PI * 2}
             position={[0, -0.75, 0]}
             showDegrees={true}
+            onClose={() => setShowSlider(false)}
           />
         </group>
+      </HeadLockedUI>
+
+      <HeadLockedUI
+        distance={1.0}
+        verticalOffset={0}
+        enabled={showNotification}
+      >
+        <VRNotificationPanel
+          show={showNotification}
+          message={notificationMessage}
+          type={notificationType}
+          onClose={() => {
+            setShowNotification(false);
+            setShowControlPanel(true);
+          }}
+        />
       </HeadLockedUI>
     </>
   );

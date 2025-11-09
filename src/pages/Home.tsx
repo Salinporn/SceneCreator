@@ -111,7 +111,7 @@ export function Home() {
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.95rem' }}>
+          <span style={{ color: '#1e293b', fontSize: '0.95rem' }}>
             Welcome, <strong>{username}</strong>!
           </span>
           <button

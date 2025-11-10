@@ -25,16 +25,16 @@ export function VRFurniturePanel({
   const rows = Math.ceil(catalog.length / itemsPerRow);
 
   const headerHeight = 0.25;
-  const itemHeight = 0.65;
-  const topPadding = 0.03;
-  const bottomPadding = 0.06;
+  const itemHeight = 0.5;
+  const topPadding = 0.001;
+  const bottomPadding = 0.02;
 
   const panelHeight = Math.max(
-    1.5,
+    1.2,
     headerHeight + topPadding + (rows * itemHeight) + bottomPadding
   );
 
-  const panelWidth = 1.7;
+  const panelWidth = 1;
 
 
   return (
@@ -57,8 +57,8 @@ export function VRFurniturePanel({
 
       {/* Header */}
       <Text
-        position={[0, panelHeight / 2 - 0.15, 0.01]}
-        fontSize={0.08}
+        position={[0, panelHeight / 2 - 0.12, 0.01]}
+        fontSize={0.05}
         color="#334155"
         anchorX="center"
         anchorY="middle"
@@ -72,7 +72,7 @@ export function VRFurniturePanel({
         <group position={[0, 0, 0.01]}>
           <Text
             position={[0, 0, 0]}
-            fontSize={0.06}
+            fontSize={0.03}
             color="#334155"
             anchorX="center"
             anchorY="middle"
@@ -83,7 +83,7 @@ export function VRFurniturePanel({
       ) : catalog.length === 0 ? (
         <Text
           position={[0, 0, 0.01]}
-          fontSize={0.05}
+          fontSize={0.03}
           color="#334155"
           anchorX="center"
           anchorY="middle"
@@ -96,8 +96,8 @@ export function VRFurniturePanel({
             const col = itemIndex % itemsPerRow;
             const row = Math.floor(itemIndex / itemsPerRow);
 
-            const cardWidth = 0.44;
-            const cardHeight = 0.59;
+            const cardWidth = 0.25;
+            const cardHeight = 0.4;
             const cardSpacing = 0.05;
             const totalWidth = itemsPerRow * cardWidth + (itemsPerRow - 1) * cardSpacing;
             const x = -totalWidth / 2 + col * (cardWidth + cardSpacing) + cardWidth / 2;
@@ -151,16 +151,16 @@ export function VRFurniturePanel({
 
                   {f.image ? (
                     <mesh>
-                      <planeGeometry args={[0.35, 0.35]} />
+                      <planeGeometry args={[0.2, 0.2]} />
                       <FurnitureImageMaterial image={f.image} />
                     </mesh>
                   ) : (
                     <mesh>
-                      <planeGeometry args={[0.35, 0.35]} />
+                      <planeGeometry args={[0.2, 0.2]} />
                       <meshStandardMaterial color="#d0d6dd" />
                       <Text
-                        fontSize={0.04}
-                        color="#334155"
+                        fontSize={0.03}
+                        color="#ffffffff"
                         anchorX="center"
                         anchorY="middle"
                       >
@@ -171,9 +171,9 @@ export function VRFurniturePanel({
                 </group>
 
                 {f.type && (
-                  <group position={[-0.072, -0.15, 0.02]}>
+                  <group position={[-0.04, -0.06, 0.02]}>
                     <mesh>
-                      <planeGeometry args={[0.2, 0.07]} />
+                      <planeGeometry args={[0.12, 0.05]} />
                       <meshStandardMaterial
                         color="#66B9E2"
                         roughness={0.5}
@@ -181,8 +181,8 @@ export function VRFurniturePanel({
                     </mesh>
                     <Text
                       position={[0, 0, 0.001]}
-                      fontSize={0.041}
-                      color="#334155"
+                      fontSize={0.02}
+                      color="#ffffff"
                       anchorX="center"
                       anchorY="middle"
                       fontWeight="600"
@@ -193,8 +193,8 @@ export function VRFurniturePanel({
                 )}
 
                 <Text
-                  position={[0, -0.23, 0.02]}
-                  fontSize={0.042}
+                  position={[0, -0.14, 0.02]}
+                  fontSize={0.03}
                   color="#334155"
                   anchorX="center"
                   anchorY="middle"

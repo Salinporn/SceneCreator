@@ -535,7 +535,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       </HeadLockedUI>
 
       <HeadLockedUI
-        distance={1.6}
+        distance={1.4}
         verticalOffset={0}
         enabled={showFurniture}
       >

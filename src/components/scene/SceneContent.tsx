@@ -527,7 +527,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       <ControlPanelToggle onToggle={handleToggleControlPanel} />
 
       <HeadLockedUI
-        distance={1.25}
+        distance={1.6}
         verticalOffset={0}
         enabled={showInstructions}
       >
@@ -535,7 +535,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       </HeadLockedUI>
 
       <HeadLockedUI
-        distance={1.26}
+        distance={1.6}
         verticalOffset={0}
         enabled={showFurniture}
       >
@@ -549,7 +549,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       </HeadLockedUI>
 
       <HeadLockedUI
-        distance={1.3}
+        distance={1.7}
         verticalOffset={0}
         enabled={showControlPanel}
       >
@@ -565,7 +565,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       </HeadLockedUI>
 
       <HeadLockedUI
-        distance={1.0}
+        distance={1.4}
         enabled={showSlider && selectedItemIndex !== null}
       >
         <group>
@@ -594,7 +594,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       </HeadLockedUI>
 
       <HeadLockedUI
-        distance={1.0}
+        distance={1.4}
         verticalOffset={0}
         enabled={showNotification}
       >

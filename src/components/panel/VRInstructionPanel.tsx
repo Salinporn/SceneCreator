@@ -46,17 +46,17 @@ export function VRInstructionPanel({ show, onClose }: { show: boolean; onClose: 
     <group>
       {/* Background */}
       <mesh>
-        <GradientBackground width={1.3} height={1} radius={0.1} color1="#EAF4FA" color2="#F5F7FA" opacity={0.7} />
+        <GradientBackground width={1} height={0.8} radius={0.1} color1="#EAF4FA" color2="#F5F7FA" opacity={0.7} />
       </mesh>
 
       {/* Header */}
-      <Text position={[0, 0.4, 0.01]} fontSize={0.08} color="#334155" anchorX="center" anchorY="middle" fontWeight="semi-bold">
+      <Text position={[0, 0.32, 0.01]} fontSize={0.05} color="#334155" anchorX="center" anchorY="middle" fontWeight="semi-bold">
         Instructions
       </Text>
 
       {/* Close Button */}
       <group
-        position={[0.55, 0.4, 0.01]}
+        position={[0.4, 0.32, 0.01]}
         onPointerEnter={(e) => {
           e.stopPropagation();
           setHoveredButton("close");
@@ -71,7 +71,7 @@ export function VRInstructionPanel({ show, onClose }: { show: boolean; onClose: 
         }}
       >
         <mesh>
-          <RoundedPlane width={0.1} height={0.1} radius={0.05} />
+          <RoundedPlane width={0.08} height={0.08} radius={0.03} />
           <meshStandardMaterial
             color={hoveredButton === "close" ? "##334155" : "#334155"}
             emissive={hoveredButton === "close" ? "#ccc" : "#ccc"}
@@ -80,7 +80,7 @@ export function VRInstructionPanel({ show, onClose }: { show: boolean; onClose: 
         </mesh>
         <Text
           position={[-0.005, -0.01, 0.01]}
-          fontSize={0.055}
+          fontSize={0.05}
           color="#fff"
           anchorX="center"
           anchorY="middle"
@@ -90,26 +90,26 @@ export function VRInstructionPanel({ show, onClose }: { show: boolean; onClose: 
       </group>
 
       {/* Separator */}
-      <mesh position={[0, 0.3, 0.01]}>
-        <planeGeometry args={[1.2, 0.005]} />
+      <mesh position={[0, 0.25, 0.01]}>
+        <planeGeometry args={[0.9, 0.005]} />
         <meshBasicMaterial color="#A5D1E7" />
       </mesh>
 
       {/* Section Title */}
-      <Text position={[0, 0.18, 0.01]} fontSize={0.06} color={section.color} anchorX="center" anchorY="middle" fontWeight={500}>
+      <Text position={[0, 0.18, 0.01]} fontSize={0.04} color={section.color} anchorX="center" anchorY="middle" fontWeight={500}>
         {section.title}
       </Text>
 
       {/* Section Content */}
       {section.content.map((line, i) => (
-        <Text key={i} position={[0, 0.05 - i * 0.1, 0.01]} fontSize={0.043} color="#334155" anchorX="center" anchorY="middle">
+        <Text key={i} position={[0, 0.1 - i * 0.1, 0.01]} fontSize={0.035} color="#334155" anchorX="center" anchorY="middle">
           {line}
         </Text>
       ))}
 
       {sectionIndex > 0 && (
         <group
-          position={[-0.55, -0.4, 0.01]}
+          position={[-0.4, -0.3, 0.01]}
           onPointerEnter={(e) => {
             e.stopPropagation();
             setHoveredButton("prev");
@@ -145,7 +145,7 @@ export function VRInstructionPanel({ show, onClose }: { show: boolean; onClose: 
 
       {sectionIndex < sections.length - 1 && (
         <group
-          position={[0.55, -0.4, 0.01]}
+          position={[0.4, -0.3, 0.01]}
           onPointerEnter={(e) => {
             e.stopPropagation();
             setHoveredButton("next");

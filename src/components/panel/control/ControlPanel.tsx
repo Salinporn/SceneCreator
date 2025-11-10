@@ -22,10 +22,10 @@ export function VRControlPanel({
 
   if (!show) return null;
 
-  const panelWidth = 1;
-  const panelHeight = 1.15;
-  const buttonWidth = 0.7;
-  const buttonHeight = 0.15;
+  const panelWidth = 0.6;
+  const panelHeight = 0.8;
+  const buttonWidth = 0.45;
+  const buttonHeight = 0.1;
 
   return (
     <group>
@@ -47,8 +47,8 @@ export function VRControlPanel({
 
       {/* Header */}
       <Text
-        position={[0, panelHeight / 2 - 0.15, 0.01]}
-        fontSize={0.075}
+        position={[0, panelHeight / 2 - 0.11, 0.01]}
+        fontSize={0.05}
         color="#334155"
         anchorX="center"
         anchorY="middle"
@@ -58,7 +58,7 @@ export function VRControlPanel({
       </Text>
 
       {/* Save Button */}
-      <group position={[0, 0.25, 0.01]}>
+      <group position={[0, 0.16, 0.01]}>
         <mesh
           onPointerEnter={(e) => {
             e.stopPropagation();
@@ -88,7 +88,7 @@ export function VRControlPanel({
         </mesh>
         <Text
           position={[0, 0, 0.01]}
-          fontSize={0.06}
+          fontSize={0.04}
           color="#334155"
           anchorX="center"
           anchorY="middle"
@@ -98,14 +98,14 @@ export function VRControlPanel({
         </Text>
       </group>
 
-      <group position={[0, 0.24, 0]}>
+      <group position={[0, 0.145, 0]}>
         <mesh>
           <ButtonBackground width={buttonWidth} height={buttonHeight} radius={0.03} colorTop="#000000" colorBottom="#000000" opacity={0.15} />
         </mesh>
       </group>
 
       {/* Instruction Button */}
-      <group position={[0, 0.05, 0.01]}>
+      <group position={[0, 0.01, 0.01]}>
         <mesh
           onPointerEnter={(e) => {
             e.stopPropagation();
@@ -129,7 +129,7 @@ export function VRControlPanel({
         </mesh>
         <Text
           position={[0, 0, 0.01]}
-          fontSize={0.06}
+          fontSize={0.04}
           color="#334155"
           anchorX="center"
           anchorY="middle"
@@ -139,14 +139,14 @@ export function VRControlPanel({
         </Text>
       </group>
 
-      <group position={[0, 0.04, 0]}>
+      <group position={[0, -0.005, 0]}>
         <mesh>
           <ButtonBackground width={buttonWidth} height={buttonHeight} radius={0.03} colorTop="#000000" colorBottom="#000000" opacity={0.15} />
         </mesh>
       </group>
 
       {/* Back Button */}
-      <group position={[0, -0.15, 0.01]}>
+      <group position={[0, -0.14, 0.01]}>
         <mesh
           onPointerEnter={(e) => {
             e.stopPropagation();
@@ -170,7 +170,7 @@ export function VRControlPanel({
         </mesh>
         <Text
           position={[0, 0, 0.01]}
-          fontSize={0.06}
+          fontSize={0.04}
           color="#334155"
           anchorX="center"
           anchorY="middle"
@@ -180,14 +180,14 @@ export function VRControlPanel({
         </Text>
       </group>
 
-      <group position={[0, -0.16, 0]}>
+      <group position={[0, -0.155, 0]}>
         <mesh>
           <ButtonBackground width={buttonWidth} height={buttonHeight} radius={0.03} colorTop="#000000" colorBottom="#000000" opacity={0.15} />
         </mesh>
       </group>
 
       {/* Logout Button */}
-      <group position={[0, -0.35, 0.01]}>
+      <group position={[0, -0.29, 0.01]}>
         <mesh
           onPointerEnter={(e) => {
             e.stopPropagation();
@@ -211,7 +211,7 @@ export function VRControlPanel({
         </mesh>
         <Text
           position={[0, 0, 0.01]}
-          fontSize={0.06}
+          fontSize={0.04}
           color="#334155"
           anchorX="center"
           anchorY="middle"
@@ -221,22 +221,11 @@ export function VRControlPanel({
         </Text>
       </group>
 
-      <group position={[0, -0.36, 0]}>
+      <group position={[0, -0.305, 0]}>
         <mesh>
           <ButtonBackground width={buttonWidth} height={buttonHeight} radius={0.03} colorTop="#000000" colorBottom="#000000" opacity={0.15} />
         </mesh>
       </group>
-
-      {/* Helper text */}
-      <Text
-        position={[0, -panelHeight / 2 + 0.1, 0.01]}
-        fontSize={0.045}
-        color="#334155"
-        anchorX="center"
-        anchorY="middle"
-      >
-        Press X/A to close
-      </Text>
     </group>
   );
 }

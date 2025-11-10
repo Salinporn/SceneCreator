@@ -42,18 +42,18 @@ export function VRSlider({
     <group position={position}>
       {/* Background */}
       <mesh position={[0, 0, -0.01]}>
-        <GradientBackground width={0.65} height={0.25} radius={0.05} color1="#EAF4FA" color2="#F5F7FA" opacity={0.9} />
+        <GradientBackground width={0.5} height={0.15} radius={0.04} color1="#EAF4FA" color2="#F5F7FA" opacity={0.9} />
       </mesh>
 
       {/* Close Button */}
       <group
-        position={[0.3, 0.1, 0.01]}
+        position={[0.21, 0.03, 0.01]}
         onPointerEnter={(e) => { e.stopPropagation(); setHoveredButton("close"); }}
         onPointerLeave={(e) => { e.stopPropagation(); setHoveredButton(null); }}
         onPointerDown={(e) => { e.stopPropagation(); onClose(); }}
       >
         <mesh>
-          <RoundedPlane width={0.08} height={0.08} radius={0.04} />
+          <RoundedPlane width={0.05} height={0.05} radius={0.02} />
           <meshStandardMaterial
             color={hoveredButton === "close" ? "#1E40AF" : "#334155"}
             emissive={hoveredButton === "close" ? "#66B9E2" : "#ccc"}
@@ -61,8 +61,8 @@ export function VRSlider({
           />
         </mesh>
         <Text
-          position={[-0.002, -0.01, 0.01]}
-          fontSize={0.045}
+          position={[-0.002, -0.005, 0.01]}
+          fontSize={0.03}
           color="#334155"
           anchorX="center"
           anchorY="middle"
@@ -72,7 +72,7 @@ export function VRSlider({
       </group>
 
       {/* Label */}
-      <Text position={[0, 0.05, 0]} fontSize={0.04} color="#334155" anchorX="center" anchorY="middle">
+      <Text position={[0, 0.02, 0]} fontSize={0.03} color="#334155" anchorX="center" anchorY="middle">
         {label}: {displayValue}
       </Text>
 
@@ -94,13 +94,13 @@ export function VRSlider({
         }}
         onPointerLeave={() => setIsDragging(false)}
       >
-        <boxGeometry args={[0.5, 0.02, 0.01]} />
+        <boxGeometry args={[0.4, 0.015, 0.01]} />
         <meshStandardMaterial color="#A5D1E7" />
       </mesh>
 
       {/* Slider Handle */}
       <mesh position={[sliderPosition, -0.03, 0.01]}>
-        <sphereGeometry args={[0.025, 16, 16]} />
+        <sphereGeometry args={[0.02, 16, 16]} />
         <meshStandardMaterial
           color={isDragging ? "#66B9E2" : "#C7E4FA"}
           emissive={isDragging ? "#66B9E2" : "#C7E4FA"}

@@ -576,7 +576,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
             label="Scale"
             min={0.1}
             max={2}
-            position={[0, 0.4, 0]}
+            position={[0, 0.3, 0]}
             onClose={() => setShowSlider(false)}
           />
           <VRSlider

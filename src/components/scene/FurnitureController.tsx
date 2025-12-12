@@ -34,6 +34,7 @@ function DraggableFurniture({
   const isPresenting = !!xr.session;
   const [hasCollision, setHasCollision] = React.useState(false);
   const [_modelHeight, setModelHeight] = React.useState(0);
+  const moveCheckInProgress = React.useRef(false);
 
   const { scene } = item.modelPath ? useGLTF(item.modelPath) : { scene: null };
 
@@ -55,28 +56,34 @@ function DraggableFurniture({
   React.useEffect(() => {
     if (!groupRef.current) return;
 
+    let cancelled = false;
     const itemId = `${item.id}`;
-    collisionDetector.updateFurnitureBox(itemId, groupRef.current);
 
-    // Check for collisions
-    const collision = collisionDetector.checkAllCollisions(itemId);
-    setHasCollision(collision.hasCollision);
+    const runCollisionCheck = async () => {
+      collisionDetector.updateFurnitureBox(itemId, groupRef.current!, item.model_id);
 
-    if (onCollisionDetected) {
-      onCollisionDetected(collision.hasCollision);
-    }
+      // Check for collisions with precise model verification
+      const collision = await collisionDetector.checkAllCollisions(itemId);
+      if (cancelled) return;
 
-    if (collision.hasCollision) {
-      console.warn('⚠️ Collision detected for', item.name, ':', collision.collidingObjects);
-    }
-  }, [item.position, item.rotation, item.scale]);
+      setHasCollision(collision.hasCollision);
 
-  React.useEffect(() => {
+      if (onCollisionDetected) {
+        onCollisionDetected(collision.hasCollision);
+      }
+
+      if (collision.hasCollision) {
+        console.warn('⚠️ Collision detected for', item.name, ':', collision.collidingObjects);
+      }
+    };
+
+    runCollisionCheck();
+
     return () => {
-      const itemId = `${item.id}`;
+      cancelled = true;
       collisionDetector.removeFurniture(itemId);
     };
-  }, [item.id]);
+  }, [item.position, item.rotation, item.scale, item.id, item.model_id, item.name, onCollisionDetected]);
 
   useFrame((_state, delta) => {
     // Disable furniture editing when in navigation mode
@@ -165,31 +172,42 @@ function DraggableFurniture({
       // Check if new position is valid
       const itemId = `${item.id}`;
       const tempPosition = groupRef.current.position.clone();
+
+      if (moveCheckInProgress.current) return;
+      moveCheckInProgress.current = true;
+
       groupRef.current.position.copy(newPosition);
-      collisionDetector.updateFurnitureBox(itemId, groupRef.current);
 
-      const collision = collisionDetector.checkAllCollisions(itemId);
+      (async () => {
+        collisionDetector.updateFurnitureBox(itemId, groupRef.current!, item.model_id);
 
-      if (!collision.hasCollision) {
-        // Position is valid, update
-        onPositionChange([newPosition.x, 0, newPosition.z]);
-      } else {
-        // Try to find a valid position nearby
-        const validPosition = collisionDetector.findValidPosition(
-          itemId,
-          newPosition,
-          groupRef.current,
-          4
-        );
+        const collision = await collisionDetector.checkAllCollisions(itemId);
 
-        if (validPosition) {
-          onPositionChange([validPosition.x, 0, validPosition.z]);
+        if (!collision.hasCollision) {
+          // Position is valid, update
+          onPositionChange([newPosition.x, 0, newPosition.z]);
         } else {
-          // Revert to original position
-          groupRef.current.position.copy(tempPosition);
-          collisionDetector.updateFurnitureBox(itemId, groupRef.current);
+          // Try to find a valid position nearby with precise checks
+          const validPosition = await collisionDetector.findValidPosition(
+            itemId,
+            newPosition,
+            groupRef.current!,
+            4
+          );
+
+          if (validPosition) {
+            onPositionChange([validPosition.x, 0, validPosition.z]);
+          } else {
+            // Revert to original position
+            groupRef.current.position.copy(tempPosition);
+            collisionDetector.updateFurnitureBox(itemId, groupRef.current!, item.model_id);
+          }
         }
-      }
+      })()
+        .catch((err) => console.error('Error during collision check:', err))
+        .finally(() => {
+          moveCheckInProgress.current = false;
+        });
     }
 
     if (Math.abs(rotateDelta) > deadzone) {

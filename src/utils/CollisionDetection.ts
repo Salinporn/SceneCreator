@@ -1,4 +1,15 @@
 import * as THREE from 'three';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+const COLLISION_API_URL = API_BASE_URL
+  ? `${API_BASE_URL}/digitalhomes/overlap_check/`
+  : null;
+
+interface CollisionApiOverlapResult {
+  result?: {
+    status?: string;
+    overlap?: boolean;
+  };
+}
 export interface CollisionResult {
   hasCollision: boolean;
   collidingObjects: string[];
@@ -9,6 +20,15 @@ export interface CollisionResult {
 export class CollisionDetector {
   private static instance: CollisionDetector;
   private furnitureBoxes: Map<string, THREE.Box3> = new Map();
+  private furnitureTransforms: Map<
+    string,
+    {
+      modelId?: number;
+      position: THREE.Vector3;
+      rotation: THREE.Euler;
+      scale: THREE.Vector3;
+    }
+  > = new Map();
   private roomBox: THREE.Box3 | null = null;
   private helperMeshes: Map<string, THREE.Mesh> = new Map();
   private showDebugBoxes: boolean = false;
@@ -59,9 +79,28 @@ export class CollisionDetector {
     );
   }
 
-  updateFurnitureBox(itemId: string, object: THREE.Object3D) {
+  updateFurnitureBox(itemId: string, object: THREE.Object3D, modelId?: number) {
     const box = new THREE.Box3().setFromObject(object);
     this.furnitureBoxes.set(itemId, box);
+
+    // Capture world-space transform for precise collision checks
+    const worldPosition = new THREE.Vector3();
+    const worldQuaternion = new THREE.Quaternion();
+    const worldScale = new THREE.Vector3();
+    object.getWorldPosition(worldPosition);
+    object.getWorldQuaternion(worldQuaternion);
+    object.getWorldScale(worldScale);
+
+    const worldRotation = new THREE.Euler().setFromQuaternion(worldQuaternion);
+
+    const existing = this.furnitureTransforms.get(itemId);
+
+    this.furnitureTransforms.set(itemId, {
+      modelId: modelId ?? existing?.modelId,
+      position: worldPosition.clone(),
+      rotation: worldRotation.clone(),
+      scale: worldScale.clone(),
+    });
 
     if (this.showDebugBoxes) {
       this.createDebugBox(itemId, box, object.parent);
@@ -70,6 +109,7 @@ export class CollisionDetector {
 
   removeFurniture(itemId: string) {
     this.furnitureBoxes.delete(itemId);
+    this.furnitureTransforms.delete(itemId);
     const helper = this.helperMeshes.get(itemId);
     if (helper && helper.parent) {
       helper.parent.remove(helper);
@@ -117,7 +157,105 @@ export class CollisionDetector {
     };
   }
 
-  checkFurnitureCollisions(itemId: string): CollisionResult {
+  private getModelDetails(itemId: string) {
+    const transform = this.furnitureTransforms.get(itemId);
+    if (!transform || transform.modelId === undefined) return null;
+
+    return {
+      modelId: transform.modelId,
+      position: [
+        transform.position.x,
+        transform.position.y,
+        transform.position.z,
+        0,
+      ],
+      rotation: [
+        transform.rotation.x,
+        transform.rotation.y,
+        transform.rotation.z,
+      ],
+      scale: [
+        transform.scale.x,
+        transform.scale.y,
+        transform.scale.z,
+      ],
+    };
+  }
+
+  private async checkModelsOverlapWithApi(
+    mainItemId: string,
+    otherItemId: string
+  ): Promise<boolean> {
+    if (!COLLISION_API_URL) {
+      console.warn(
+        'Model collision API URL not configured; falling back to AABB collision.'
+      );
+      return true;
+    }
+
+    const mainDetails = this.getModelDetails(mainItemId);
+    const otherDetails = this.getModelDetails(otherItemId);
+
+    if (!mainDetails || !otherDetails) {
+      console.warn(
+        'Missing model details for precise collision check; falling back to AABB collision.'
+      );
+      return true;
+    }
+
+    const payloadMain = { [mainDetails.modelId]: {
+      position: mainDetails.position,
+      rotation: mainDetails.rotation,
+      scale: mainDetails.scale,
+    }};
+
+    const payloadOthers = { [otherDetails.modelId]: {
+      position: otherDetails.position,
+      rotation: otherDetails.rotation,
+      scale: otherDetails.scale,
+    }};
+
+    const formData = new FormData();
+    formData.append('main_model_details', JSON.stringify(payloadMain));
+    formData.append('model_details_list', JSON.stringify(payloadOthers));
+
+    try {
+      const response = await fetch(COLLISION_API_URL, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        console.warn('Collision API responded with error status:', response.status);
+        return true;
+      }
+
+      const data = await response.json();
+
+      // Prefer explicit contain_overlap flag, otherwise fallback to truthy results
+      if (typeof data?.contain_overlap === 'boolean') {
+        return data.contain_overlap;
+      }
+
+      const results = Array.isArray(data?.results)
+        ? (data.results as CollisionApiOverlapResult[])
+        : null;
+
+      if (results) {
+        return results.some(
+          r => r?.result?.status !== 'error' && r?.result?.overlap === true
+        );
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Failed to call collision API, assuming collision:', error);
+      return true;
+    }
+  }
+
+  async checkFurnitureCollisions(itemId: string): Promise<CollisionResult> {
     const box = this.furnitureBoxes.get(itemId);
     
     if (!box) {
@@ -126,13 +264,15 @@ export class CollisionDetector {
 
     const collidingObjects: string[] = [];
 
-    this.furnitureBoxes.forEach((otherBox, otherId) => {
-      if (otherId !== itemId) {
-        if (box.intersectsBox(otherBox)) {
-          collidingObjects.push(otherId);
-        }
+    for (const [otherId, otherBox] of this.furnitureBoxes.entries()) {
+      if (otherId === itemId) continue;
+      if (!box.intersectsBox(otherBox)) continue;
+
+      const hasPreciseOverlap = await this.checkModelsOverlapWithApi(itemId, otherId);
+      if (hasPreciseOverlap) {
+        collidingObjects.push(otherId);
       }
-    });
+    }
 
     return {
       hasCollision: collidingObjects.length > 0,
@@ -140,9 +280,9 @@ export class CollisionDetector {
     };
   }
 
-  checkAllCollisions(itemId: string): CollisionResult {
+  async checkAllCollisions(itemId: string): Promise<CollisionResult> {
     const roomCollision = this.checkRoomCollision(itemId);
-    const furnitureCollision = this.checkFurnitureCollisions(itemId);
+    const furnitureCollision = await this.checkFurnitureCollisions(itemId);
 
     return {
       hasCollision: roomCollision.hasCollision || furnitureCollision.hasCollision,
@@ -154,18 +294,18 @@ export class CollisionDetector {
     };
   }
 
-  findValidPosition(
+  async findValidPosition(
     itemId: string,
     desiredPosition: THREE.Vector3,
     object: THREE.Object3D,
     maxAttempts: number = 8
-  ): THREE.Vector3 | null {
+  ): Promise<THREE.Vector3 | null> {
     // Try the desired position first
     const originalPosition = object.position.clone();
     object.position.copy(desiredPosition);
     this.updateFurnitureBox(itemId, object);
 
-    const collision = this.checkAllCollisions(itemId);
+    const collision = await this.checkAllCollisions(itemId);
     if (!collision.hasCollision) {
       return desiredPosition.clone();
     }
@@ -185,7 +325,7 @@ export class CollisionDetector {
       object.position.copy(testPosition);
       this.updateFurnitureBox(itemId, object);
 
-      const testCollision = this.checkAllCollisions(itemId);
+      const testCollision = await this.checkAllCollisions(itemId);
       if (!testCollision.hasCollision) {
         return testPosition.clone();
       }
@@ -243,16 +383,16 @@ export class CollisionDetector {
     this.helperMeshes.clear();
   }
 
-  isPositionValid(
+  async isPositionValid(
     itemId: string,
     position: THREE.Vector3,
     object: THREE.Object3D
-  ): boolean {
+  ): Promise<boolean> {
     const originalPosition = object.position.clone();
     object.position.copy(position);
     this.updateFurnitureBox(itemId, object);
 
-    const collision = this.checkAllCollisions(itemId);
+    const collision = await this.checkAllCollisions(itemId);
     
     // Restore original position
     object.position.copy(originalPosition);

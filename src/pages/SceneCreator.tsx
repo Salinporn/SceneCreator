@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Canvas } from "@react-three/fiber";
 import { createXRStore, XR } from "@react-three/xr";
 import { makeAuthenticatedRequest } from "../utils/Auth";
 import { SceneContent } from "../components/scene/SceneContent";
+import { ARContent, ARContentRef } from "../components/ar/ARContent";
+import { ARPlacementController } from "../components/ar/ARPlacementController";
+import { ARSceneManager } from "../ar/ARSceneManager";
 
 const xrStore = createXRStore();
 
@@ -31,12 +34,18 @@ interface DigitalHome {
   updated_at: string;
 }
 
+type XRMode = "vr" | "ar";
+
 export function SceneCreator() {
   const { homeId } = useParams<{ homeId: string }>();
   const navigate = useNavigate();
   const [digitalHome, setDigitalHome] = useState<DigitalHome | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [xrMode, setXRMode] = useState<XRMode>("vr");
+  const [arManager, setARManager] = useState<ARSceneManager | null>(null);
+  const [arSupported, setARSupported] = useState<boolean | null>(null);
+  const arContentRef = useRef<ARContentRef>(null);
 
   useEffect(() => {
     if (!homeId) {
@@ -65,6 +74,52 @@ export function SceneCreator() {
 
     loadDigitalHome();
   }, [homeId, navigate]);
+
+  // Check AR support
+  useEffect(() => {
+    const checkARSupport = async () => {
+      if (navigator.xr && navigator.xr.isSessionSupported) {
+        try {
+          const supported = await navigator.xr.isSessionSupported("immersive-ar");
+          setARSupported(supported);
+        } catch (error) {
+          console.warn("AR support check failed:", error);
+          setARSupported(false);
+        }
+      } else {
+        setARSupported(false);
+      }
+    };
+
+    checkARSupport();
+  }, []);
+
+  const handleARReady = (manager: ARSceneManager) => {
+    setARManager(manager);
+  };
+
+  const handleARError = (error: Error) => {
+    console.error("AR Error:", error);
+    setError(`AR Error: ${error.message}`);
+  };
+
+  // Handle mode toggle
+  const handleEnterVR = () => {
+    setXRMode("vr");
+    xrStore.enterVR().catch((err) => console.warn("Failed to enter VR:", err));
+  };
+
+  const handleEnterAR = async () => {
+    setXRMode("ar");
+    try {
+      if (arContentRef.current) {
+        await arContentRef.current.startAR();
+      }
+    } catch (error) {
+      console.error("Failed to start AR:", error);
+      setError(error instanceof Error ? error.message : "Failed to start AR");
+    }
+  };
 
   if (loading) {
     return (
@@ -125,9 +180,38 @@ export function SceneCreator() {
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
-      <Canvas style={{ width: "100vw", height: "100vh", position: "fixed" }}>
+      <Canvas 
+        style={{ width: "100vw", height: "100vh", position: "fixed" }}
+        gl={{ 
+          preserveDrawingBuffer: true,
+          antialias: true,
+          alpha: true
+        }}
+        onCreated={({ gl }) => {
+          const originalSetSize = gl.setSize.bind(gl);
+          gl.setSize = function(width: number, height: number, updateStyle?: boolean) {
+            if (!gl.xr.isPresenting) {
+              return originalSetSize(width, height, updateStyle);
+            }
+            return;
+          };
+        }}
+      >
         <XR store={xrStore}>
-          {homeId && <SceneContent homeId={homeId} digitalHome={digitalHome} />}
+          {xrMode === "vr" && homeId && (
+            <SceneContent homeId={homeId} digitalHome={digitalHome} />
+          )}
+          {xrMode === "ar" && homeId && (
+            <>
+              <ARContent 
+                ref={arContentRef}
+                homeId={homeId} 
+                onARReady={handleARReady}
+                onARError={handleARError}
+              />
+              <ARPlacementController arManager={arManager} />
+            </>
+          )}
         </XR>
       </Canvas>
 
@@ -138,25 +222,43 @@ export function SceneCreator() {
         display: "flex", 
         justifyContent: "center", 
         alignItems: "flex-end", 
+        gap: "10px",
         pointerEvents: "none" 
       }}>
         <button
           style={{ 
             marginBottom: 20, 
             padding: "12px 24px", 
-            backgroundColor: "#4CAF50", 
+            backgroundColor: xrMode === "vr" ? "#4CAF50" : "#666", 
             color: "#1e293b", 
             border: "none", 
             borderRadius: 8, 
             cursor: "pointer", 
-            pointerEvents: "auto" 
+            pointerEvents: "auto",
+            fontWeight: xrMode === "vr" ? "bold" : "normal"
           }}
-          onClick={() => {
-            xrStore.enterVR().catch((err) => console.warn("Failed to enter VR:", err));
-          }}
+          onClick={handleEnterVR}
         >
           Enter VR
         </button>
+        {arSupported && (
+          <button
+            style={{ 
+              marginBottom: 20, 
+              padding: "12px 24px", 
+              backgroundColor: xrMode === "ar" ? "#2196F3" : "#666", 
+              color: "#fff", 
+              border: "none", 
+              borderRadius: 8, 
+              cursor: "pointer", 
+              pointerEvents: "auto",
+              fontWeight: xrMode === "ar" ? "bold" : "normal"
+            }}
+            onClick={handleEnterAR}
+          >
+            Enter AR
+          </button>
+        )}
       </div>
 
       <style>{`

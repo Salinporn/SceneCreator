@@ -1,95 +1,84 @@
-import * as React from "react";
 import { useEffect, useRef } from "react";
 import { useXR } from "@react-three/xr";
-import * as THREE from "three";
 import { ARSceneManager } from "../../ar/ARSceneManager";
 import { ARHitTestResult } from "../../ar/types";
+import * as THREE from "three";
+import { ARPlacementControllerLogic } from "../../ar/logic/ARPlacementControllerLogic";
+import { SelectedFurniture } from "../../ar/types/ARSceneTypes";
 
 interface ARPlacementControllerProps {
   arManager: ARSceneManager | null;
+  selectedFurniture: SelectedFurniture | null;
   onPlaceObject?: (hitResult: ARHitTestResult, object: THREE.Object3D) => void;
-  testObject?: THREE.Object3D;
+  onObjectPlaced?: (objectId: string) => void;
 }
 
-/**
- * AR Placement Controller
- * Handles object placement via tap/click in AR mode
- */
+// AR Placement Controller component - for object placement
 export function ARPlacementController({
   arManager,
+  selectedFurniture,
   onPlaceObject,
-  testObject
+  onObjectPlaced
 }: ARPlacementControllerProps) {
   const { session } = useXR();
-  const currentFrameRef = useRef<XRFrame | null>(null);
-  const lastSelectTimeRef = useRef<number>(0);
+  const logicRef = useRef<ARPlacementControllerLogic | null>(null);
+  const callbacksRef = useRef({ onPlaceObject, onObjectPlaced });
 
-  // Create a simple test cube if not provided
-  const defaultTestObject = React.useMemo(() => {
-    if (testObject) return testObject;
-    
-    const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-    const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    cube.name = "ARTestCube";
-    return cube;
-  }, [testObject]);
-
-  // Store current frame from AR manager
   useEffect(() => {
-    if (!arManager) return;
+    callbacksRef.current = { onPlaceObject, onObjectPlaced };
+    if (logicRef.current) {
+      logicRef.current.updateCallbacks(callbacksRef.current);
+    }
+  }, [onPlaceObject, onObjectPlaced]);
 
-    // Set up frame callback to store current frame
+  useEffect(() => {
+    logicRef.current = new ARPlacementControllerLogic(arManager, selectedFurniture, callbacksRef.current);
+
+    if (arManager) {
+      logicRef.current.setARManager(arManager);
+    }
+
+    return () => {
+      if (logicRef.current) {
+        logicRef.current.cleanup();
+        logicRef.current = null;
+      }
+    };
+  }, [arManager, selectedFurniture]);
+
+  // Update AR manager when it changes
+  useEffect(() => {
+    if (logicRef.current) {
+      logicRef.current.setARManager(arManager);
+    }
+  }, [arManager]);
+
+  // Update selected furniture when it changes
+  useEffect(() => {
+    if (logicRef.current) {
+      logicRef.current.setSelectedFurniture(selectedFurniture);
+    }
+  }, [selectedFurniture]);
+
+  useEffect(() => {
+    if (logicRef.current) {
+      logicRef.current.setupSessionListeners(session ?? null);
+    }
+
+    return () => {
+      if (logicRef.current) {
+        logicRef.current.setupSessionListeners(null);
+      }
+    };
+  }, [session, arManager, selectedFurniture]);
+
+  useEffect(() => {
+    if (!arManager || !logicRef.current) return;
+
     arManager.setFrameCallback((frame: XRFrame) => {
-      currentFrameRef.current = frame;
+      logicRef.current?.setFrameCallback(frame);
     });
   }, [arManager]);
 
-  // Handle tap/click for object placement
-  useEffect(() => {
-    if (!arManager || !session) return;
-
-    const handleSelect = () => {
-      if (!arManager || !currentFrameRef.current) {
-        return;
-      }
-
-      // Prevent rapid repeated placements
-      const now = Date.now();
-      if (now - lastSelectTimeRef.current < 500) {
-        return;
-      }
-      lastSelectTimeRef.current = now;
-
-      // Perform hit test using current frame
-      const hitResult = arManager.getFirstHitTestResult(currentFrameRef.current);
-      if (!hitResult) {
-        return;
-      }
-
-      // Place test object
-      const objectId = `ar-object-${Date.now()}`;
-      const placed = arManager.placeObject(hitResult, defaultTestObject, objectId);
-      
-      if (placed && onPlaceObject) {
-        onPlaceObject(hitResult, placed);
-      }
-    };
-
-    // Listen for select events (tap/click)
-    session.addEventListener("select", handleSelect);
-
-    // Also listen for selectstart for better responsiveness
-    session.addEventListener("selectstart", () => {
-      // Could show visual feedback here
-    });
-
-    return () => {
-      session.removeEventListener("select", handleSelect);
-      session.removeEventListener("selectstart", () => {});
-    };
-  }, [arManager, session, defaultTestObject, onPlaceObject]);
-
   return null;
 }
-

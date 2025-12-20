@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Text } from "@react-three/drei";
-import { Furniture } from "../../types/Furniture";
+import { Furniture } from "../../../ar/types/Furniture";
 import { FurnitureImage } from "./FurnitureImage";
 import { RoundedPlane, GradientBackground, CardBackground } from "../common/PanelElements";
 
@@ -160,7 +160,7 @@ export function VRFurniturePanel({
                       <meshStandardMaterial color="#d0d6dd" />
                       <Text
                         fontSize={0.03}
-                        color="#ffffffff"
+                        color="#ffffff"
                         anchorX="center"
                         anchorY="middle"
                       >

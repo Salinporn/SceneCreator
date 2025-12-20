@@ -73,7 +73,7 @@ export function VRInstructionPanel({ show, onClose }: { show: boolean; onClose: 
         <mesh>
           <RoundedPlane width={0.08} height={0.08} radius={0.03} />
           <meshStandardMaterial
-            color={hoveredButton === "close" ? "##334155" : "#334155"}
+            color={hoveredButton === "close" ? "#334155" : "#334155"}
             emissive={hoveredButton === "close" ? "#ccc" : "#ccc"}
             emissiveIntensity={hoveredButton === "close" ? 0.6 : 0.4}
           />

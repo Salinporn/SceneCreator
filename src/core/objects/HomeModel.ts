@@ -61,6 +61,14 @@ export class HomeModel extends Base3DObject {
     this.calculateBoundingBox();
   }
 
+  protected onModelLoaded(model: THREE.Group): void {
+    void model;
+  }
+
+  protected onModelLoadError(error: unknown): void {
+    console.error(`HomeModel ${this.name} failed to load:`, error);
+  }
+
   setBoundary(boundary: Boundary): void {
     this.boundary = boundary;
     this.boundingBox = new THREE.Box3(
@@ -138,7 +146,7 @@ export class HomeModel extends Base3DObject {
     return this.boundingBox?.max.y || 3;
   }
 
-  serialize(): Record<string, any> {
+  serialize(): Record<string, unknown> {
     return {
       id: this.id,
       name: this.name,

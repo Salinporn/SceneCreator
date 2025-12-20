@@ -1,11 +1,11 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Canvas } from "@react-three/fiber";
 import { createXRStore, XR } from "@react-three/xr";
 import { makeAuthenticatedRequest } from "../utils/Auth";
 import { SceneContent } from "../components/scene/SceneContent";
 import { ARContent, ARContentRef } from "../components/ar/ARContent";
-import { ARPlacementController } from "../components/ar/ARPlacementController";
+import { ARSceneContent } from "../components/ar/ARSceneContent";
 import { ARSceneManager } from "../ar/ARSceneManager";
 
 const xrStore = createXRStore();
@@ -17,9 +17,9 @@ interface DigitalHome {
   deployedItems: Array<{ id: string; is_container: boolean }>;
   spatialData: {
     id: number;
-    positions: any;
-    rotation: any;
-    scale: any;
+    positions: unknown;
+    rotation: unknown;
+    scale: unknown;
     boundary: {
       min_x: number;
       max_x: number;
@@ -45,6 +45,18 @@ export function SceneCreator() {
   const [xrMode, setXRMode] = useState<XRMode>("vr");
   const [arManager, setARManager] = useState<ARSceneManager | null>(null);
   const [arSupported, setARSupported] = useState<boolean | null>(null);
+  const [furnitureCatalog, setFurnitureCatalog] = useState<Array<{
+    id: string;
+    name: string;
+    description: string;
+    model_id: number;
+    image: string;
+    category: string;
+    type: string;
+    is_container: boolean;
+  }>>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [modelUrlCache, setModelUrlCache] = useState<Map<number, string>>(new Map());
   const arContentRef = useRef<ARContentRef>(null);
 
   useEffect(() => {
@@ -102,6 +114,24 @@ export function SceneCreator() {
     console.error("AR Error:", error);
     setError(`AR Error: ${error.message}`);
   };
+
+  const handleFurnitureCatalogLoaded = useCallback((catalog: Array<{
+    id: string;
+    name: string;
+    description: string;
+    model_id: number;
+    image: string;
+    category: string;
+    type: string;
+    is_container: boolean;
+  }>, modelCache: Map<number, string>) => {
+    setFurnitureCatalog(catalog);
+    setModelUrlCache(modelCache);
+  }, []);
+
+  const handleCatalogLoadingChange = useCallback((loading: boolean) => {
+    setCatalogLoading(loading);
+  }, []);
 
   // Handle mode toggle
   const handleEnterVR = () => {
@@ -205,11 +235,20 @@ export function SceneCreator() {
             <>
               <ARContent 
                 ref={arContentRef}
-                homeId={homeId} 
                 onARReady={handleARReady}
                 onARError={handleARError}
+                onFurnitureCatalogLoaded={handleFurnitureCatalogLoaded}
+                onCatalogLoadingChange={handleCatalogLoadingChange}
               />
-              <ARPlacementController arManager={arManager} />
+              {arManager && (
+                <ARSceneContent
+                  arManager={arManager}
+                  furnitureCatalog={furnitureCatalog}
+                  catalogLoading={catalogLoading}
+                  modelUrlCache={modelUrlCache}
+                  onFurnitureSelect={() => {}}
+                />
+              )}
             </>
           )}
         </XR>

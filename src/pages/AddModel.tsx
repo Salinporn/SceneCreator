@@ -17,6 +17,7 @@ export function AddModel() {
   const [category, setCategory] = useState("");
   const [type, setType] = useState("");
   const [isContainer, setIsContainer] = useState(false);
+  const [wallMountable, setWallMountable] = useState(false);
   const [itemModelFile, setItemModelFile] = useState<File | null>(null);
   const [itemTextureFiles, setItemTextureFiles] = useState<FileList | null>(null);
   const [itemImage, setItemImage] = useState<File | null>(null);
@@ -70,6 +71,7 @@ export function AddModel() {
     formData.append("category", category);
     formData.append("type", type);
     formData.append("is_container", String(isContainer));
+    formData.append("wall_mountable", String(wallMountable));
     formData.append("model_file", itemModelFile);
     if (itemTextureFiles) Array.from(itemTextureFiles).forEach((f) => formData.append("texture_files", f));
     if (itemImage) formData.append("image", itemImage);
@@ -113,6 +115,7 @@ export function AddModel() {
         <Input label="Category" value={category} onChange={setCategory} placeholder="e.g., Living Room" />
         <Input label="Type" value={type} onChange={setType} placeholder="e.g., Chair" />
         <Checkbox label="Is Container?" checked={isContainer} onChange={setIsContainer} />
+        <Checkbox label="Wall Mountable?" checked={wallMountable} onChange={setWallMountable} />
         <FileInput label="Model File (.glb, .gltf) *" accept=".glb,.gltf" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setItemModelFile(e.target.files?.[0] || null)} />
         <FileInput label="Texture Files (optional)" multiple onChange={(e: React.ChangeEvent<HTMLInputElement>) => setItemTextureFiles(e.target.files)} />
         <FileInput label="Preview Image (optional)" accept="image/*" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setItemImage(e.target.files?.[0] || null)} />

@@ -22,6 +22,7 @@ export class CatalogLoader {
           category: string;
           type: string;
           is_container: boolean;
+          wall_mountable?: boolean;
         }) => ({
           id: item.id.toString(),
           name: item.name,
@@ -31,6 +32,7 @@ export class CatalogLoader {
           category: item.category,
           type: item.type,
           is_container: item.is_container,
+          wall_mountable: item.wall_mountable ?? false,
         }));
 
         this.furnitureCatalog = items;

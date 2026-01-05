@@ -104,6 +104,44 @@ export class ARPlacementControllerLogic {
     }
   }
 
+  // Check if a surface is horizontal (floor/table) or vertical (wall)
+  private isHorizontalSurface(normal: THREE.Vector3): boolean {
+    const threshold = 0.7;
+    return Math.abs(normal.y) > threshold;
+  }
+
+  // Check if a surface is a ceiling
+  private isCeiling(normal: THREE.Vector3): boolean {
+    const threshold = 0.7;
+    return normal.y < -threshold;
+  }
+
+  // Check if a surface is a floor
+  private isFloor(normal: THREE.Vector3): boolean {
+    const threshold = 0.7;
+    return normal.y > threshold;
+  }
+
+  // Validate if furniture can be placed on the given surface
+  private canPlaceOnSurface(hitResult: ARHitTestResult): boolean {
+    if (!this.selectedFurniture) return false;
+
+    const wallMountable = this.selectedFurniture.wall_mountable ?? false;
+
+    // If no normal available, assume it's valid
+    if (!hitResult.normal) {
+      return true;
+    }
+
+    // If wall mountable, can be placed on walls and floor
+    if (wallMountable) {
+      return !this.isCeiling(hitResult.normal);
+    }
+
+    // If not wall mountable, only allow on horizontal surfaces
+    return this.isFloor(hitResult.normal);
+  }
+
   // Handle the selection of a furniture item
   private async handleSelect(): Promise<void> {
     if (!this.arManager || !this.currentFrame || !this.selectedFurniture) {
@@ -119,6 +157,12 @@ export class ARPlacementControllerLogic {
     const hitResult = this.arManager.getFirstHitTestResult(this.currentFrame);
     if (!hitResult) {
       console.warn("No hit test result found");
+      return;
+    }
+
+    // Check wall mounting restrictions
+    if (!this.canPlaceOnSurface(hitResult)) {
+      console.warn("Cannot place non-wall-mountable furniture on vertical surfaces");
       return;
     }
 

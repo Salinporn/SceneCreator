@@ -1,10 +1,13 @@
 import { useRef, useState, useEffect } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useXR } from "@react-three/xr";
 import { ARSceneManager } from "../../ar/ARSceneManager";
 import { ARPlacementController } from "./ARPlacementController";
 import { VRFurniturePanel } from "../panel/furniture/FurniturePanel";
 import { CatalogToggle } from "../panel/furniture/FurnitureCatalogToggle";
 import { HeadLockedUI } from "../panel/common/HeadLockedUI";
 import { VRInstructionPanel } from "../panel/VRInstructionPanel";
+import { VRSlider } from "../panel/VRSlider";
 import { ARSceneContentLogic } from "../../ar/logic/ARSceneContentLogic";
 import { ARSceneState } from "../../ar/types/ARSceneTypes";
 import { Furniture } from "../../ar/types/Furniture";
@@ -29,7 +32,11 @@ export function ARSceneContent({
     showFurniture: false,
     showInstructions: true,
     selectedFurniture: null,
-    placedFurnitureIds: []
+    placedFurnitureIds: [],
+    selectedObjectId: null,
+    showSlider: false,
+    sliderValue: 1.0,
+    rotationValue: 0
   });
 
   const logicRef = useRef<ARSceneContentLogic | null>(null);
@@ -54,7 +61,11 @@ export function ARSceneContent({
       showFurniture: false,
       showInstructions: true,
       selectedFurniture: null,
-      placedFurnitureIds: []
+      placedFurnitureIds: [],
+      selectedObjectId: null,
+      showSlider: false,
+      sliderValue: 1.0,
+      rotationValue: 0
     };
 
     logicRef.current = new ARSceneContentLogic(
@@ -79,6 +90,16 @@ export function ARSceneContent({
     }
   }, [arManager, furnitureCatalog, modelUrlCache]);
 
+  const { camera } = useThree();
+  const { session } = useXR();
+
+  // Update frame for controller input
+  useFrame((_state, delta) => {
+    if (logicRef.current && session) {
+      logicRef.current.updateFrame(session, camera, delta);
+    }
+  });
+
   const currentState = state;
 
   if (!logicRef.current) return null;
@@ -99,6 +120,9 @@ export function ARSceneContent({
             object={obj}
             onClick={(e: { stopPropagation: () => void }) => {
               e.stopPropagation();
+              if (logic) {
+                logic.handleSelectObject(obj.name);
+              }
             }}
           />
         ))}
@@ -126,6 +150,19 @@ export function ARSceneContent({
           loading={catalogLoading}
           onSelectItem={(f) => logic.handleSelectFurniture(f)}
           placedFurnitureIds={logic.getPlacedCatalogIds()}
+        />
+      </HeadLockedUI>
+
+      <HeadLockedUI distance={1.4} enabled={currentState.showSlider && currentState.selectedObjectId !== null}>
+        <VRSlider
+          show={currentState.showSlider && currentState.selectedObjectId !== null}
+          value={currentState.sliderValue}
+          onChange={(v: number) => logic.handleScaleChange(v)}
+          label="Scale"
+          min={0.1}
+          max={2}
+          position={[0, 0, 0]}
+          onClose={() => logic.updateState({ showSlider: false })}
         />
       </HeadLockedUI>
 

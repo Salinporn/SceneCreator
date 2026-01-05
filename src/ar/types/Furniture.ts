@@ -7,5 +7,6 @@ export interface Furniture {
   category: string;
   type: string;
   is_container: boolean;
+  wall_mountable?: boolean;
 }
 

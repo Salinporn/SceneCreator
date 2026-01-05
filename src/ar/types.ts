@@ -12,6 +12,7 @@ export interface ARHitTestResult {
   rotation: THREE.Quaternion;
   matrix: THREE.Matrix4;
   distance: number;
+  normal?: THREE.Vector3; // Surface normal vector
 }
 
 

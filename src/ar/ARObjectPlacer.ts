@@ -70,7 +70,14 @@ export class ARObjectPlacer extends ARHitTestManager {
       return false;
     }
 
+    // Check collision before applying
+    if (!this.checkPositionCollision(object, position)) {
+      return false;
+    }
+
     object.position.copy(position);
+    object.updateMatrix();
+    object.updateMatrixWorld(true);
     return true;
   }
 
@@ -82,7 +89,14 @@ export class ARObjectPlacer extends ARHitTestManager {
       return false;
     }
 
+    // Check collision before applying
+    if (!this.checkRotationCollision(object, rotation)) {
+      return false;
+    }
+
     object.quaternion.copy(rotation);
+    object.updateMatrix();
+    object.updateMatrixWorld(true);
     return true;
   }
 
@@ -93,7 +107,130 @@ export class ARObjectPlacer extends ARHitTestManager {
       return false;
     }
 
+    // Check collision before applying
+    if (!this.checkScaleCollision(object, scale)) {
+      return false;
+    }
+
     object.scale.set(scale, scale, scale);
+    object.updateMatrix();
+    object.updateMatrixWorld(true);
+    return true;
+  }
+
+  // Check if position would cause collision with boundaries
+  private checkPositionCollision(object: THREE.Object3D, newPosition: THREE.Vector3): boolean {
+    const originalPosition = object.position.clone();
+    object.position.copy(newPosition);
+    object.updateMatrix();
+    object.updateMatrixWorld(true);
+
+    const box = new THREE.Box3().setFromObject(object);
+    
+    object.position.copy(originalPosition);
+    object.updateMatrix();
+    object.updateMatrixWorld(true);
+
+    // Check boundaries
+    const FLOOR_Y = -0.2;
+    const CEILING_Y = 2.5;
+    const MAX_DISTANCE = 5.0;
+
+    // Check floor collision
+    if (box.min.y < FLOOR_Y) {
+      return false;
+    }
+
+    // Check ceiling collision
+    if (box.max.y > CEILING_Y) {
+      return false;
+    }
+
+    // Check wall collisions
+    // Check X boundaries (left/right walls)
+    if (box.min.x < -MAX_DISTANCE || box.max.x > MAX_DISTANCE) {
+      return false;
+    }
+
+    // Check Z boundaries (front/back walls)
+    if (box.min.z < -MAX_DISTANCE || box.max.z > MAX_DISTANCE) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // Check if rotation would cause collision with boundaries
+  private checkRotationCollision(object: THREE.Object3D, newRotation: THREE.Quaternion): boolean {
+    const originalRotation = object.quaternion.clone();
+    object.quaternion.copy(newRotation);
+    object.updateMatrix();
+    object.updateMatrixWorld(true);
+
+    const box = new THREE.Box3().setFromObject(object);
+    
+    object.quaternion.copy(originalRotation);
+    object.updateMatrix();
+    object.updateMatrixWorld(true);
+
+    // Check boundaries
+    const FLOOR_Y = -0.2;
+    const CEILING_Y = 2.5;
+    const MAX_DISTANCE = 5.0;
+
+    // Check floor and ceiling
+    if (box.min.y < FLOOR_Y || box.max.y > CEILING_Y) {
+      return false;
+    }
+
+    // Check wall collisions
+    // Check X boundaries (left/right walls)
+    if (box.min.x < -MAX_DISTANCE || box.max.x > MAX_DISTANCE) {
+      return false;
+    }
+
+    // Check Z boundaries (front/back walls)
+    if (box.min.z < -MAX_DISTANCE || box.max.z > MAX_DISTANCE) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // Check if scale would cause collision with boundaries
+  private checkScaleCollision(object: THREE.Object3D, newScale: number): boolean {
+    const originalScale = object.scale.clone();
+    object.scale.set(newScale, newScale, newScale);
+    object.updateMatrix();
+    object.updateMatrixWorld(true);
+
+    const box = new THREE.Box3().setFromObject(object);
+    
+    object.scale.copy(originalScale);
+    object.updateMatrix();
+    object.updateMatrixWorld(true);
+
+    // Check boundaries
+    const FLOOR_Y = -0.2;
+    const CEILING_Y = 2.5;
+    const MAX_DISTANCE = 5.0;
+
+    // Check floor and ceiling
+    if (box.min.y < FLOOR_Y || box.max.y > CEILING_Y) {
+      return false;
+    }
+
+    // Check wall collisions
+    // Check X boundaries (left/right walls)
+    if (box.min.x < -MAX_DISTANCE || box.max.x > MAX_DISTANCE) {
+      return false;
+    }
+
+    // Check Z boundaries (front/back walls)
+    if (box.min.z < -MAX_DISTANCE || box.max.z > MAX_DISTANCE) {
+      return false;
+    }
+
     return true;
   }
 

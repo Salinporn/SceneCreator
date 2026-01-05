@@ -110,11 +110,14 @@ export class ARHitTestManager extends ARSessionManager {
 
         const distance = position.length();
 
+        const normal = new THREE.Vector3(0, 1, 0).applyQuaternion(rotation).normalize();
+
         results.push({
           position,
           rotation,
           matrix,
-          distance
+          distance,
+          normal
         });
       }
 

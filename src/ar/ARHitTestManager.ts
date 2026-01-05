@@ -110,7 +110,9 @@ export class ARHitTestManager extends ARSessionManager {
 
         const distance = position.length();
 
-        const normal = new THREE.Vector3(0, 1, 0).applyQuaternion(rotation).normalize();
+        // Extract surface normal from rotation
+        const upVector = new THREE.Vector3(0, 1, 0);
+        const normal = upVector.applyQuaternion(rotation).normalize();
 
         results.push({
           position,

@@ -26,8 +26,46 @@ export class ARObjectPlacer extends ARHitTestManager {
     const clonedObject = object.clone();
     clonedObject.name = id;
     
+    // Check if placing on a wall
+    const isWall = hitResult.normal && Math.abs(hitResult.normal.y) < 0.4;
+    
+    if (isWall && hitResult.normal) {
+      // Place on wall
+      const wallNormal = hitResult.normal.clone().normalize();
+      
+      const worldUp = new THREE.Vector3(0, 1, 0);
+      
+      const right = new THREE.Vector3().crossVectors(wallNormal, worldUp).normalize();
+      
+      if (right.length() < 0.1) {
+        right.set(1, 0, 0);
+        if (wallNormal.x < 0) right.negate();
+      }
+      
+      const correctedUp = new THREE.Vector3().crossVectors(right, wallNormal).normalize();
+      
+      const forward = wallNormal.clone().negate();
+      
+      const rotationMatrix = new THREE.Matrix4();
+      rotationMatrix.makeBasis(
+        right,        // X axis (right)
+        correctedUp,  // Y axis (up)
+        forward       // Z axis (forward, away from wall)
+      );
+      
+      const wallRotation = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
+      clonedObject.quaternion.copy(wallRotation);
+      
+      clonedObject.userData.isOnWall = true;
+      clonedObject.userData.wallNormal = wallNormal.clone();
+      clonedObject.userData.wallPosition = hitResult.position.clone();
+    } else {
+      clonedObject.quaternion.copy(hitResult.rotation);
+      clonedObject.userData.isOnWall = false;
+      clonedObject.userData.wallNormal = null;
+    }
+    
     clonedObject.position.copy(hitResult.position);
-    clonedObject.quaternion.copy(hitResult.rotation);
     
     this.objectGroup.add(clonedObject);
 
@@ -70,12 +108,38 @@ export class ARObjectPlacer extends ARHitTestManager {
       return false;
     }
 
+    // If object is on a wall, constrain movement to the wall plane
+    if (object.userData.isOnWall && object.userData.wallNormal) {
+      const wallNormal = object.userData.wallNormal as THREE.Vector3;
+      const currentPosition = object.position.clone();
+      
+      const delta = new THREE.Vector3().subVectors(position, currentPosition);
+      
+      const distanceAlongNormal = delta.dot(wallNormal);
+      const projectedDelta = delta.clone().sub(
+        wallNormal.clone().multiplyScalar(distanceAlongNormal)
+      );
+      
+      const newPositionOnPlane = currentPosition.clone().add(projectedDelta);
+      
+      const toNewPosition = new THREE.Vector3().subVectors(newPositionOnPlane, currentPosition);
+      const distanceFromWall = toNewPosition.dot(wallNormal);
+      position = newPositionOnPlane.clone().sub(
+        wallNormal.clone().multiplyScalar(distanceFromWall)
+      );
+    }
+
     // Check collision before applying
     if (!this.checkPositionCollision(object, position)) {
       return false;
     }
 
     object.position.copy(position);
+    
+    if (object.userData.isOnWall && object.userData.wallNormal) {
+      object.userData.wallPosition = position.clone();
+    }
+    
     object.updateMatrix();
     object.updateMatrixWorld(true);
     return true;
@@ -89,12 +153,39 @@ export class ARObjectPlacer extends ARHitTestManager {
       return false;
     }
 
-    // Check collision before applying
-    if (!this.checkRotationCollision(object, rotation)) {
-      return false;
+    if (object.userData.isOnWall && object.userData.wallNormal) {
+      const originalQuaternion = object.quaternion.clone();
+      object.quaternion.copy(rotation);
+      object.updateMatrix();
+      object.updateMatrixWorld(true);
+      
+      // Check if rotation causes collision
+      if (!this.checkRotationCollision(object, rotation)) {
+        // Restore original rotation if collision detected
+        object.quaternion.copy(originalQuaternion);
+        object.updateMatrix();
+        object.updateMatrixWorld(true);
+        return false;
+      }
+      
+      const wallNormal = object.userData.wallNormal as THREE.Vector3;
+      const wallPosition = object.userData.wallPosition as THREE.Vector3;
+      
+      const toObject = new THREE.Vector3().subVectors(object.position, wallPosition);
+      const distanceFromWall = toObject.dot(wallNormal);
+      const projectedPosition = object.position.clone().sub(
+        wallNormal.clone().multiplyScalar(distanceFromWall)
+      );
+      
+      object.position.copy(projectedPosition);
+      object.userData.wallPosition = projectedPosition.clone();
+    } else {
+      if (!this.checkRotationCollision(object, rotation)) {
+        return false;
+      }
+      object.quaternion.copy(rotation);
     }
 
-    object.quaternion.copy(rotation);
     object.updateMatrix();
     object.updateMatrixWorld(true);
     return true;
@@ -121,13 +212,19 @@ export class ARObjectPlacer extends ARHitTestManager {
   // Check if position would cause collision with boundaries
   private checkPositionCollision(object: THREE.Object3D, newPosition: THREE.Vector3): boolean {
     const originalPosition = object.position.clone();
+    const originalRotation = object.quaternion.clone();
+    const originalScale = object.scale.clone();
+    
     object.position.copy(newPosition);
     object.updateMatrix();
     object.updateMatrixWorld(true);
 
     const box = new THREE.Box3().setFromObject(object);
     
+    // Restore original state
     object.position.copy(originalPosition);
+    object.quaternion.copy(originalRotation);
+    object.scale.copy(originalScale);
     object.updateMatrix();
     object.updateMatrixWorld(true);
 
@@ -155,6 +252,26 @@ export class ARObjectPlacer extends ARHitTestManager {
     // Check Z boundaries (front/back walls)
     if (box.min.z < -MAX_DISTANCE || box.max.z > MAX_DISTANCE) {
       return false;
+    }
+
+    if (object.userData.isOnWall && object.userData.wallNormal) {
+      const wallNormal = object.userData.wallNormal as THREE.Vector3;
+      
+      const objectCenter = box.getCenter(new THREE.Vector3());
+      
+      const objectPositionOnPlane = newPosition.clone();
+      const toCenter = new THREE.Vector3().subVectors(objectCenter, objectPositionOnPlane);
+      
+      const boxSize = box.getSize(new THREE.Vector3());
+      const centerDistanceFromPlane = Math.abs(toCenter.dot(wallNormal));
+      
+      const maxObjectDimension = Math.max(boxSize.x, boxSize.y, boxSize.z);
+      
+      const maxAllowedDistance = maxObjectDimension * 1.2;
+      
+      if (centerDistanceFromPlane > maxAllowedDistance) {
+        return false;
+      }
     }
 
     return true;
@@ -192,6 +309,25 @@ export class ARObjectPlacer extends ARHitTestManager {
     // Check Z boundaries (front/back walls)
     if (box.min.z < -MAX_DISTANCE || box.max.z > MAX_DISTANCE) {
       return false;
+    }
+
+    if (object.userData.isOnWall && object.userData.wallNormal) {
+      const wallNormal = object.userData.wallNormal as THREE.Vector3;
+      
+      const objectPositionOnPlane = object.position.clone();
+      
+      const objectCenter = box.getCenter(new THREE.Vector3());
+      const boxSize = box.getSize(new THREE.Vector3());
+      const toCenter = new THREE.Vector3().subVectors(objectCenter, objectPositionOnPlane);
+      const centerDistanceFromPlane = Math.abs(toCenter.dot(wallNormal));
+      
+      const maxObjectDimension = Math.max(boxSize.x, boxSize.y, boxSize.z);
+      
+      const maxAllowedDistance = maxObjectDimension * 1.2;
+      
+      if (centerDistanceFromPlane > maxAllowedDistance) {
+        return false;
+      }
     }
 
     return true;

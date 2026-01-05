@@ -104,21 +104,15 @@ export class ARPlacementControllerLogic {
     }
   }
 
-  // Check if a surface is horizontal (floor/table) or vertical (wall)
-  private isHorizontalSurface(normal: THREE.Vector3): boolean {
-    const threshold = 0.7;
-    return Math.abs(normal.y) > threshold;
-  }
-
   // Check if a surface is a ceiling
   private isCeiling(normal: THREE.Vector3): boolean {
-    const threshold = 0.7;
+    const threshold = 0.7; // Keep strict for ceiling
     return normal.y < -threshold;
   }
 
   // Check if a surface is a floor
   private isFloor(normal: THREE.Vector3): boolean {
-    const threshold = 0.7;
+    const threshold = 0.6; // Threshold that ensures floor detection (Y > 0.6)
     return normal.y > threshold;
   }
 

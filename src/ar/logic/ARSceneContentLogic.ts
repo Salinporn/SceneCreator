@@ -212,7 +212,7 @@ export class ARSceneContentLogic {
     // Calculate new position
     const newPosition = object.position.clone().add(delta);
     
-    // Update object position
+    // Update object position (will handle wall constraint if needed)
     const success = this.arManager.updateObjectPosition(id, newPosition);
     if (success) {
       object.updateMatrix();
@@ -303,19 +303,56 @@ export class ARSceneContentLogic {
 
     // Apply movement
     if (Math.abs(moveX) > 0 || Math.abs(moveZ) > 0) {
-      const forward = new THREE.Vector3();
-      camera.getWorldDirection(forward);
-      forward.y = 0;
-      forward.normalize();
+      const object = this.arManager.getObject(this.state.selectedObjectId);
+      
+      // Check if object is on a wall
+      if (object && object.userData.isOnWall && object.userData.wallNormal) {
+        const wallNormal = object.userData.wallNormal as THREE.Vector3;
+        
+        // Calculate movement in camera space
+        const forward = new THREE.Vector3();
+        camera.getWorldDirection(forward);
+        forward.y = 0;
+        forward.normalize();
 
-      const right = new THREE.Vector3();
-      right.crossVectors(forward, camera.up).normalize();
+        const right = new THREE.Vector3();
+        right.crossVectors(forward, camera.up).normalize();
+        
+        const up = new THREE.Vector3(0, 1, 0);
 
-      const deltaPosition = new THREE.Vector3();
-      deltaPosition.addScaledVector(forward, -moveZ * moveSpeed * delta);
-      deltaPosition.addScaledVector(right, moveX * moveSpeed * delta);
+        const worldDelta = new THREE.Vector3();
+        worldDelta.addScaledVector(forward, -moveZ * moveSpeed * delta);
+        worldDelta.addScaledVector(right, moveX * moveSpeed * delta);
+        
+        const rightOnWall = right.clone().sub(
+          wallNormal.clone().multiplyScalar(right.dot(wallNormal))
+        ).normalize();
+        
+        const upOnWall = up.clone().sub(
+          wallNormal.clone().multiplyScalar(up.dot(wallNormal))
+        ).normalize();
+        
+        const wallPlaneDelta = new THREE.Vector3();
+        wallPlaneDelta.addScaledVector(rightOnWall, moveX * moveSpeed * delta);
+        wallPlaneDelta.addScaledVector(upOnWall, -moveZ * moveSpeed * delta);
+        
+        this.handleFurnitureMove(this.state.selectedObjectId, wallPlaneDelta);
+      } else {
+        const forward = new THREE.Vector3();
+        camera.getWorldDirection(forward);
+        forward.y = 0;
+        forward.normalize();
 
-      this.handleFurnitureMove(this.state.selectedObjectId, deltaPosition);
+        const right = new THREE.Vector3();
+        right.crossVectors(forward, camera.up).normalize();
+
+        const deltaPosition = new THREE.Vector3();
+        deltaPosition.addScaledVector(forward, -moveZ * moveSpeed * delta);
+        deltaPosition.addScaledVector(right, moveX * moveSpeed * delta);
+        deltaPosition.y = 0; // Keep movement horizontal for floor items
+
+        this.handleFurnitureMove(this.state.selectedObjectId, deltaPosition);
+      }
     }
 
     // Apply rotations

@@ -9,15 +9,18 @@ export function VRFurniturePanel({
   catalog,
   loading,
   onSelectItem,
-  placedFurnitureIds = []
+  placedFurnitureIds = [],
+  onClose
 }: {
   show: boolean;
   catalog: Furniture[];
   loading: boolean;
   onSelectItem: (f: Furniture) => void;
   placedFurnitureIds?: string[];
+  onClose: () => void;
 }) {
   const [hoveredItem, setHoveredItem] = React.useState<string | null>(null);
+  const [hoveredButton, setHoveredButton] = React.useState<string | null>(null);
 
   if (!show) return null;
 
@@ -44,6 +47,7 @@ export function VRFurniturePanel({
         <GradientBackground width={panelWidth} height={panelHeight} radius={0.1} color1="#EAF4FA" color2="#F5F7FA" opacity={0.7} />
       </mesh>
 
+
       {/** Background Shadow */}
       <mesh position={[0, -0.01, -0.03]}>
         <RoundedPlane width={panelWidth} height={panelHeight} radius={0.1} />
@@ -54,6 +58,8 @@ export function VRFurniturePanel({
           roughness={1.0}
         />
       </mesh>
+
+
 
       {/* Header */}
       <Text
@@ -66,7 +72,42 @@ export function VRFurniturePanel({
       >
         📦My Inventory
       </Text>
-
+     
+      {/* Close Button */}
+      <group
+        position={[0.4, 0.32, 0.01]}
+        onPointerEnter={(e) => {
+          e.stopPropagation();
+          setHoveredButton("close");
+        }}
+        onPointerLeave={(e) => {
+          e.stopPropagation();
+          setHoveredButton(null);
+        }}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+      >
+        <mesh>
+          <RoundedPlane width={0.08} height={0.08} radius={0.03} />
+          <meshStandardMaterial
+            color={hoveredButton === "close" ? "##334155" : "#334155"}
+            emissive={hoveredButton === "close" ? "#ccc" : "#ccc"}
+            emissiveIntensity={hoveredButton === "close" ? 0.6 : 0.4}
+          />
+        </mesh>
+        <Text
+          position={[-0.005, -0.01, 0.01]}
+          fontSize={0.05}
+          color="#fff"
+          anchorX="center"
+          anchorY="middle"
+        >
+          ✕
+        </Text>
+      </group>
+ 
       {/* Content */}
       {loading ? (
         <group position={[0, 0, 0.01]}>

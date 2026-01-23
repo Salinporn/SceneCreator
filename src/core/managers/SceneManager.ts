@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { FurnitureItem } from '../objects/FurnitureItem';
-import { HomeModel } from '../objects/HomeModel';
+import { HomeModel, CalibrationTransform } from '../objects/HomeModel';
 import { CollisionDetector } from './CollisionDetector';
+import { HomeCalibrationManager, CalibrationData } from './HomeCalibrationManager';
 
 export interface SceneConfig {
   enableCollisionDetection?: boolean;
@@ -56,6 +57,101 @@ export class SceneManager {
 
   getHomeModel(): HomeModel | null {
     return this.homeModel;
+  }
+
+  /**
+   * Apply calibration transform to the home model
+   */
+  applyCalibration(transform: CalibrationTransform): void {
+    if (!this.homeModel) {
+      console.warn('[SceneManager] Cannot apply calibration: no home model loaded');
+      return;
+    }
+
+    this.homeModel.applyCalibration(transform);
+    
+    // Update collision detector with new boundary
+    const boundary = this.homeModel.getBoundary();
+    if (boundary) {
+      // Transform boundary based on calibration
+      this.collisionDetector.setRoomBoundary(boundary);
+    }
+    
+    console.log('[SceneManager] Calibration applied to home model');
+  }
+
+  /**
+   * Check if home model has calibration applied
+   */
+  isHomeCalibrated(): boolean {
+    return this.homeModel?.isCalibrated() ?? false;
+  }
+
+  /**
+   * Get current calibration transform
+   */
+  getCalibrationTransform(): CalibrationTransform | null {
+    return this.homeModel?.getCalibrationTransform() ?? null;
+  }
+
+  /**
+   * Reset calibration to default
+   */
+  resetCalibration(): void {
+    this.homeModel?.resetCalibration();
+    
+    const boundary = this.homeModel?.getBoundary();
+    if (boundary) {
+      this.collisionDetector.setRoomBoundary(boundary);
+    }
+  }
+
+  /**
+   * Transform all furniture positions when recalibrating
+   * This maintains furniture positions relative to the home model
+   */
+  transformFurnitureForRecalibration(
+    oldTransform: CalibrationTransform,
+    newTransform: CalibrationTransform
+  ): void {
+    const calibrationManager = HomeCalibrationManager.getInstance();
+    
+    this.furnitureItems.forEach((furniture, id) => {
+      const currentPos = furniture.getPosition();
+      
+      // Transform furniture position from old calibration to new
+      const newPos = calibrationManager.transformFurniturePosition(
+        currentPos,
+        oldTransform.position,
+        oldTransform.rotation,
+        newTransform.position,
+        newTransform.rotation
+      );
+      
+      furniture.setPosition(newPos);
+      
+      // Update last valid position too
+      if (this.lastValidPositions.has(id)) {
+        const lastValid = this.lastValidPositions.get(id)!;
+        const newLastValid = calibrationManager.transformFurniturePosition(
+          lastValid,
+          oldTransform.position,
+          oldTransform.rotation,
+          newTransform.position,
+          newTransform.rotation
+        );
+        this.lastValidPositions.set(id, newLastValid);
+      }
+      
+      // Update collision detector
+      this.collisionDetector.updateFurnitureBox(
+        id,
+        furniture.getGroup(),
+        furniture.getModelId()
+      );
+    });
+    
+    console.log('[SceneManager] Furniture positions transformed for recalibration');
   }
 
   getCollisionDetector(): CollisionDetector {

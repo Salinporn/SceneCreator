@@ -11,10 +11,17 @@ export interface Boundary {
   max_z: number;
 }
 
+export interface CalibrationTransform {
+  position: [number, number, number];
+  rotation: [number, number, number];
+}
+
 export class HomeModel extends Base3DObject {
   protected boundary: Boundary | null = null;
   protected loader: GLTFLoader;
   protected boundingBox: THREE.Box3 | null = null;
+  protected calibrationApplied: boolean = false;
+  protected calibrationTransform: CalibrationTransform | null = null;
 
   constructor(
     id: string,
@@ -34,6 +41,50 @@ export class HomeModel extends Base3DObject {
     if (boundary) {
       this.setBoundary(boundary);
     }
+  }
+
+  applyCalibration(transform: CalibrationTransform): void {
+    this.calibrationTransform = transform;
+    this.setPosition(transform.position);
+    this.setRotation(transform.rotation);
+    this.calibrationApplied = true;
+    
+    // Recalculate bounding box after applying calibration
+    this.calculateBoundingBox();
+    
+    console.log(`[HomeModel] Calibration applied:`, {
+      position: transform.position,
+      rotation: transform.rotation,
+    });
+  }
+
+  getCalibrationTransform(): CalibrationTransform | null {
+    return this.calibrationTransform;
+  }
+
+  isCalibrated(): boolean {
+    return this.calibrationApplied;
+  }
+
+  resetCalibration(): void {
+    this.calibrationTransform = null;
+    this.setPosition([0, 0, 0]);
+    this.setRotation([0, 0, 0]);
+    this.calibrationApplied = false;
+    this.calculateBoundingBox();
+    console.log(`[HomeModel] Calibration reset`);
+  }
+
+  localToWorld(localPoint: [number, number, number]): [number, number, number] {
+    const point = new THREE.Vector3(localPoint[0], localPoint[1], localPoint[2]);
+    this.group.localToWorld(point);
+    return [point.x, point.y, point.z];
+  }
+
+  worldToLocal(worldPoint: [number, number, number]): [number, number, number] {
+    const point = new THREE.Vector3(worldPoint[0], worldPoint[1], worldPoint[2]);
+    this.group.worldToLocal(point);
+    return [point.x, point.y, point.z];
   }
 
   protected async fetchModel(path: string): Promise<THREE.Group> {
@@ -147,6 +198,20 @@ export class HomeModel extends Base3DObject {
       position: this.getPosition(),
       rotation: this.getRotation(),
       scale: this.getScale(),
+      calibration: this.calibrationTransform,
+      isCalibrated: this.calibrationApplied,
     };
+  }
+
+  getTransformedBoundingBox(): THREE.Box3 | null {
+    if (!this.boundingBox) return null;
+    
+    // Clone and transform the bounding box
+    const transformedBox = this.boundingBox.clone();
+    
+    // Apply group's world matrix
+    transformedBox.applyMatrix4(this.group.matrixWorld);
+    
+    return transformedBox;
   }
 }

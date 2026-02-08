@@ -1070,6 +1070,7 @@ interface SceneState {
   alignmentMode: 'world' | 'free' | null;
   showAlignmentPanel: boolean;
   showAlignmentConfirm: boolean;
+  homeTransparent: boolean;
 }
 
 class SceneContentLogic {
@@ -1129,6 +1130,7 @@ class SceneContentLogic {
       alignmentMode: null,
       showAlignmentPanel: true,
       showAlignmentConfirm: false,
+      homeTransparent: false,
     };
   }
 
@@ -1451,12 +1453,21 @@ class SceneContentLogic {
     }
   }
 
+  handleToggleHomeTransparency(): void {
+    const homeModel = this.sceneManager?.getHomeModel();
+    if (!homeModel) return;
+
+    const newTransparent = !this.state.homeTransparent;
+    homeModel.setTransparent(newTransparent);
+    this.updateState({ homeTransparent: newTransparent });
+  }
+
   handleSidebarItemSelect(itemId: string): void {
   this.updateState({ sidebarActiveItem: itemId });
-  
+
   switch (itemId) {
     case "movement":
-      this.updateState({ 
+      this.updateState({
         showInstructions: false,
         showFurniture: false,
         showControlPanel: false,
@@ -2104,6 +2115,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     alignmentMode: null,
     showAlignmentPanel: true,
     showAlignmentConfirm: false,
+    homeTransparent: false,
   });
 
   const logicRef = useRef<SceneContentLogic | null>(null);
@@ -2312,6 +2324,8 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
           onClose={() => logic.updateState({ showControlPanel: false })}
           alignmentMode={state.alignmentMode}
           onToggleAlignment={() => logic.handleToggleAlignmentMode()}
+          homeTransparent={state.homeTransparent}
+          onToggleTransparency={() => logic.handleToggleHomeTransparency()}
         />
       </HeadLockedUI>
 

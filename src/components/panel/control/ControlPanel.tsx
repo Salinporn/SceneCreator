@@ -11,6 +11,8 @@ export function VRControlPanel({
   saving = false,
   alignmentMode,
   onToggleAlignment,
+  homeTransparent = false,
+  onToggleTransparency,
 }: {
   show: boolean;
   onSave: () => void;
@@ -21,13 +23,15 @@ export function VRControlPanel({
   onClose: () => void;
   alignmentMode?: 'world' | 'free' | null;
   onToggleAlignment?: () => void;
+  homeTransparent?: boolean;
+  onToggleTransparency?: () => void;
 }) {
   const [hoveredButton, setHoveredButton] = React.useState<string | null>(null);
 
   if (!show) return null;
 
   const panelWidth = 0.6;
-  const panelHeight = 1.0;
+  const panelHeight = 1.15;
   const buttonWidth = 0.45;
   const buttonHeight = 0.1;
 
@@ -194,8 +198,53 @@ export function VRControlPanel({
         </>
       )}
 
+      {/* Transparency Toggle Button */}
+      {onToggleTransparency && (
+        <>
+          <group position={[0, -0.155, 0.01]}>
+            <mesh
+              onPointerEnter={(e) => {
+                e.stopPropagation();
+                setHoveredButton("transparency");
+              }}
+              onPointerLeave={(e) => {
+                e.stopPropagation();
+                setHoveredButton(null);
+              }}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                onToggleTransparency();
+              }}
+            >
+              <RoundedPlane width={buttonWidth} height={buttonHeight} radius={0.03} />
+              <meshStandardMaterial
+                color={hoveredButton === "transparency" ? "#A5D1E7" : "#66B9E2"}
+                emissive={hoveredButton === "transparency" ? "#66B9E2" : "#66B9E2"}
+                emissiveIntensity={hoveredButton === "transparency" ? 0.5 : 0.3}
+              />
+            </mesh>
+            <Text
+              position={[0, 0, 0.01]}
+              fontSize={0.04}
+              color="#334155"
+              anchorX="center"
+              anchorY="middle"
+              fontWeight={550}
+            >
+              {homeTransparent ? "Show House" : "Hide House"}
+            </Text>
+          </group>
+
+          <group position={[0, -0.17, 0]}>
+            <mesh>
+              <ButtonBackground width={buttonWidth} height={buttonHeight} radius={0.03} colorTop="#000000" colorBottom="#000000" opacity={0.15} />
+            </mesh>
+          </group>
+        </>
+      )}
+
       {/* Back Button */}
-      <group position={[0, -0.23, 0.01]}>
+      <group position={[0, -0.305, 0.01]}>
         <mesh
           onPointerEnter={(e) => {
             e.stopPropagation();
@@ -229,14 +278,14 @@ export function VRControlPanel({
         </Text>
       </group>
 
-      <group position={[0, -0.245, 0]}>
+      <group position={[0, -0.32, 0]}>
         <mesh>
           <ButtonBackground width={buttonWidth} height={buttonHeight} radius={0.03} colorTop="#000000" colorBottom="#000000" opacity={0.15} />
         </mesh>
       </group>
 
       {/* Logout Button */}
-      <group position={[0, -0.38, 0.01]}>
+      <group position={[0, -0.455, 0.01]}>
         <mesh
           onPointerEnter={(e) => {
             e.stopPropagation();
@@ -270,7 +319,7 @@ export function VRControlPanel({
         </Text>
       </group>
 
-      <group position={[0, -0.395, 0]}>
+      <group position={[0, -0.47, 0]}>
         <mesh>
           <ButtonBackground width={buttonWidth} height={buttonHeight} radius={0.03} colorTop="#000000" colorBottom="#000000" opacity={0.15} />
         </mesh>

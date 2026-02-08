@@ -146,6 +146,52 @@ export class HomeModel extends Base3DObject {
     return this.boundingBox?.max.y || 3;
   }
 
+  private isTransparent: boolean = false;
+  private originalMaterials: Map<THREE.Mesh, { opacity: number; transparent: boolean }> = new Map();
+
+  setTransparent(transparent: boolean): void {
+    if (this.isTransparent === transparent) return;
+    this.isTransparent = transparent;
+
+    this.group.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
+      for (const mat of materials) {
+        if (!(mat instanceof THREE.Material)) continue;
+
+        if (transparent) {
+          // Store original values before modifying
+          if (!this.originalMaterials.has(child)) {
+            this.originalMaterials.set(child, {
+              opacity: mat.opacity,
+              transparent: mat.transparent,
+            });
+          }
+          mat.transparent = true;
+          mat.opacity = 0.3;
+          mat.needsUpdate = true;
+        } else {
+          // Restore original values
+          const original = this.originalMaterials.get(child);
+          if (original) {
+            mat.opacity = original.opacity;
+            mat.transparent = original.transparent;
+            mat.needsUpdate = true;
+          }
+        }
+      }
+    });
+
+    if (!transparent) {
+      this.originalMaterials.clear();
+    }
+  }
+
+  getIsTransparent(): boolean {
+    return this.isTransparent;
+  }
+
   serialize(): Record<string, unknown> {
     return {
       id: this.id,

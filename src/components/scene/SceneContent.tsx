@@ -42,6 +42,7 @@ interface SceneContentProps {
       };
     };
   };
+  arModeRequested?: boolean;
 }
 
 interface SceneState {
@@ -1081,7 +1082,7 @@ private handleFurnitureDeselect(id: string): void {
 }
 
 // Wrapper for R3F hooks
-export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
+export function SceneContent({ homeId, digitalHome, arModeRequested }: SceneContentProps) {
   const navigate = useNavigate();
   const { scene, camera } = useThree();
   const xr = useXR();
@@ -1145,6 +1146,17 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     if (!xr.session || !logicRef.current) return;
     logicRef.current.setupXRRig(scene, camera);
   }, [xr.session, scene, camera]);
+
+  // Apply transparency when entering VR with AR mode requested
+  useEffect(() => {
+    if (!xr.session || !logicRef.current || !arModeRequested) return;
+
+    const homeModel = logicRef.current.sceneManager?.getHomeModel();
+    if (homeModel && !homeModel.getIsTransparent()) {
+      homeModel.setTransparent(true);
+      logicRef.current.updateState({ homeTransparent: true });
+    }
+  }, [xr.session, arModeRequested, state.loading]);
 
   // Load home
   useEffect(() => {

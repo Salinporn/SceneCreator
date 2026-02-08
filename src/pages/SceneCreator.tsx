@@ -37,6 +37,7 @@ export function SceneCreator() {
   const [digitalHome, setDigitalHome] = useState<DigitalHome | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [arModeRequested, setArModeRequested] = useState(false);
 
   useEffect(() => {
     if (!homeId) {
@@ -127,7 +128,7 @@ export function SceneCreator() {
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       <Canvas style={{ width: "100vw", height: "100vh", position: "fixed" }}>
         <XR store={xrStore}>
-          {homeId && <SceneContent homeId={homeId} digitalHome={digitalHome} />}
+          {homeId && <SceneContent homeId={homeId} digitalHome={digitalHome} arModeRequested={arModeRequested} />}
         </XR>
       </Canvas>
 
@@ -140,23 +141,42 @@ export function SceneCreator() {
         alignItems: "flex-end", 
         pointerEvents: "none" 
       }}>
-        <button
-          style={{ 
-            marginBottom: 20, 
-            padding: "12px 24px", 
-            backgroundColor: "#4CAF50", 
-            color: "#1e293b", 
-            border: "none", 
-            borderRadius: 8, 
-            cursor: "pointer", 
-            pointerEvents: "auto" 
-          }}
-          onClick={() => {
-            xrStore.enterVR().catch((err) => console.warn("Failed to enter VR:", err));
-          }}
-        >
-          Enter VR
-        </button>
+        <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+          <button
+            style={{
+              padding: "12px 24px",
+              backgroundColor: "#4CAF50",
+              color: "#1e293b",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              pointerEvents: "auto"
+            }}
+            onClick={() => {
+              setArModeRequested(false);
+              xrStore.enterVR().catch((err) => console.warn("Failed to enter VR:", err));
+            }}
+          >
+            Enter VR
+          </button>
+          <button
+            style={{
+              padding: "12px 24px",
+              backgroundColor: "#2196F3",
+              color: "#1e293b",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              pointerEvents: "auto"
+            }}
+            onClick={() => {
+              setArModeRequested(true);
+              xrStore.enterVR().catch((err) => console.warn("Failed to enter VR:", err));
+            }}
+          >
+            Enter AR
+          </button>
+        </div>
       </div>
 
       <style>{`

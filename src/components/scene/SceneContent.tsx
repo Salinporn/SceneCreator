@@ -1017,8 +1017,6 @@ import { makeAuthenticatedRequest, logout } from "../../utils/Auth";
 import { VRSidebar } from "../panel/VRSidebar"; //add
 import { TransformGizmo } from "../panel/TransformGizmo";
 import { RotationGizmo } from "../panel/RotationGizmo";
-import { VRCalibrationPanel } from "../panel/VRCalibrationPanel";
-import { HomeCalibrationManager, CalibrationData } from "../../core/managers/HomeCalibrationManager";
 
 
 
@@ -1039,8 +1037,6 @@ interface SceneContentProps {
     };
   };
 }
-
-type CalibrationStep = 'instructions' | 'positioning' | 'confirm' | 'complete';
 
 interface SceneState {
   showSlider: boolean;
@@ -1069,12 +1065,6 @@ interface SceneState {
   showRotationGizmo: boolean;  // ADD THIS
   rotationGizmoPosition: [number, number, number] | null; // ADD THIS
   showScalePanel: boolean;
-  showCalibration: boolean;
-  calibrationStep: CalibrationStep;
-  calibrationRequired: boolean;
-  isRecalibration: boolean;
-  calibrationData: CalibrationData | null;
-  calibrationAppliedThisSession: boolean;
 }
 
 class SceneContentLogic {
@@ -1105,7 +1095,7 @@ class SceneContentLogic {
     this.state = {
       showSlider: false,
       showFurniture: false,
-      showInstructions: false,
+      showInstructions: true,
       showControlPanel: false,
       showNotification: false,
       notificationMessage: "",
@@ -1129,16 +1119,8 @@ class SceneContentLogic {
       showRotationGizmo: false,  // ADD THIS
       rotationGizmoPosition: null,  // ADD THIS
       showScalePanel: false,
-      showCalibration: false,
-      calibrationStep: 'instructions',
-      calibrationRequired: false,
-      isRecalibration: false,
-      calibrationData: null,
-      calibrationAppliedThisSession: false,
     };
   }
-
-  private calibrationManager: HomeCalibrationManager = HomeCalibrationManager.getInstance();
 
   getState(): SceneState {
     return this.state;
@@ -1207,201 +1189,6 @@ class SceneContentLogic {
     this.navigationController?.reset();
     this.furnitureController?.reset();
     this.modelUrlCache.forEach(url => URL.revokeObjectURL(url));
-  }
-
-  checkCalibration(): void {
-    const hasCalibration = this.calibrationManager.hasCalibration(this.homeId);
-    
-    console.log(`[Calibration] Checking calibration for home ${this.homeId}:`, {
-      hasCalibration,
-    });
-
-    if (hasCalibration) {
-      // Load existing calibration
-      const result = this.calibrationManager.loadCalibration(this.homeId);
-      if (result.success && result.calibration) {
-        this.updateState({
-          calibrationData: result.calibration,
-          calibrationRequired: false,
-          showCalibration: false,
-          showInstructions: true,
-        });
-        console.log(`[Calibration] Loaded existing calibration`);
-      } else {
-        // Calibration data is corrupted, need recalibration
-        this.updateState({
-          calibrationRequired: true,
-          showCalibration: true,
-          calibrationStep: 'instructions',
-          showInstructions: false,
-        });
-        console.log(`[Calibration] Calibration data corrupted, need recalibration`);
-      }
-    } else {
-      // No calibration found, need to calibrate
-      this.updateState({
-        calibrationRequired: true,
-        showCalibration: true,
-        calibrationStep: 'instructions',
-        showInstructions: false,
-      });
-      console.log(`[Calibration] No calibration found, showing calibration panel`);
-    }
-  }
-
-  applyCalibrationFromXR(camera: THREE.Camera): void {
-    if (!this.sceneManager || !this.state.calibrationData) {
-      console.warn('[Calibration] Cannot apply calibration: missing data');
-      return;
-    }
-
-    // Get current camera world position
-    const cameraWorldPos = new THREE.Vector3();
-    camera.getWorldPosition(cameraWorldPos);
-    
-    // Get current camera rotation
-    const cameraWorldQuat = new THREE.Quaternion();
-    camera.getWorldQuaternion(cameraWorldQuat);
-    const euler = new THREE.Euler().setFromQuaternion(cameraWorldQuat, 'YXZ');
-
-    const currentXRPosition: [number, number, number] = [
-      cameraWorldPos.x,
-      cameraWorldPos.y,
-      cameraWorldPos.z,
-    ];
-    const currentXRRotation: [number, number, number] = [
-      0,
-      euler.y,
-      0,
-    ];
-
-    const transform = this.calibrationManager.calculateHomeTransform(
-      this.state.calibrationData,
-      currentXRPosition,
-      currentXRRotation
-    );
-
-    const existingTransform = this.sceneManager.getCalibrationTransform();
-    if (existingTransform) {
-      this.sceneManager.transformFurnitureForRecalibration(existingTransform, transform);
-    }
-
-    this.sceneManager.applyCalibration(transform);
-
-    console.log(`[Calibration] Applied calibration:`, {
-      currentXRPosition,
-      currentXRRotation,
-      homeTransform: transform,
-    });
-  }
-
-
-  handleCalibrationStep(camera: THREE.Camera): void {
-    const { calibrationStep } = this.state;
-
-    switch (calibrationStep) {
-      case 'instructions':
-        this.updateState({ calibrationStep: 'positioning' });
-        break;
-
-      case 'positioning':
-        this.captureAndSaveCalibration(camera);
-        this.updateState({ calibrationStep: 'confirm' });
-        break;
-
-      case 'confirm':
-        this.updateState({
-          calibrationStep: 'complete',
-        });
-        break;
-
-      case 'complete':
-        this.updateState({
-          showCalibration: false,
-          calibrationRequired: false,
-          showInstructions: true,
-        });
-        break;
-    }
-  }
-
-  captureAndSaveCalibration(camera: THREE.Camera): void {
-    // Get current camera world position
-    const cameraWorldPos = new THREE.Vector3();
-    camera.getWorldPosition(cameraWorldPos);
-    
-    // Get current camera rotation
-    const cameraWorldQuat = new THREE.Quaternion();
-    camera.getWorldQuaternion(cameraWorldQuat);
-    const euler = new THREE.Euler().setFromQuaternion(cameraWorldQuat, 'YXZ');
-
-    const currentXRPosition: [number, number, number] = [
-      cameraWorldPos.x,
-      cameraWorldPos.y,
-      cameraWorldPos.z,
-    ];
-    const currentXRRotation: [number, number, number] = [
-      0,
-      euler.y,
-      0,
-    ];
-
-    const homePosition: [number, number, number] = [
-      -cameraWorldPos.x,
-      0,
-      -cameraWorldPos.z,
-    ];
-    const homeRotation: [number, number, number] = [
-      0,
-      -euler.y,
-      0,
-    ];
-
-    // Save calibration
-    const result = this.calibrationManager.saveCalibration(
-      this.homeId,
-      currentXRPosition,
-      currentXRRotation,
-      homePosition,
-      homeRotation
-    );
-
-    if (result.success && result.calibration) {
-      // Apply calibration to home model
-      if (this.sceneManager) {
-        this.sceneManager.applyCalibration({
-          position: homePosition,
-          rotation: homeRotation,
-        });
-      }
-
-      this.updateState({ 
-        calibrationData: result.calibration,
-        calibrationAppliedThisSession: true, 
-      });
-
-      console.log(`[Calibration] Saved and applied calibration for home ${this.homeId}`);
-    } else {
-      this.showNotificationMessage('Failed to save calibration', 'error');
-    }
-  }
-
-  startRecalibration(): void {
-    this.updateState({
-      showCalibration: true,
-      calibrationStep: 'instructions',
-      isRecalibration: true,
-      showControlPanel: false,
-      showInstructions: false,
-    });
-  }
-
-  skipCalibration(): void {
-    this.updateState({
-      showCalibration: false,
-      calibrationRequired: false,
-      showInstructions: true,
-    });
   }
 
   async loadHome(digitalHome?: any): Promise<void> {
@@ -2194,7 +1981,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   const [state, setState] = useState<SceneState>({
     showSlider: false,
     showFurniture: false,
-    showInstructions: false, // Don't show until calibration is checked
+    showInstructions: true,
     showControlPanel: false,
     showNotification: false,
     notificationMessage: "",
@@ -2218,12 +2005,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     showRotationGizmo: false,  // ADD THIS
     rotationGizmoPosition: null, // ADD THIS
     showScalePanel: false,
-    showCalibration: false,
-    calibrationStep: 'instructions',
-    calibrationRequired: false,
-    isRecalibration: false,
-    calibrationData: null,
-    calibrationAppliedThisSession: false,
   });
 
   const logicRef = useRef<SceneContentLogic | null>(null);
@@ -2247,17 +2028,7 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
   useEffect(() => {
     if (!xr.session || !logicRef.current) return;
     logicRef.current.setupXRRig(scene, camera);
-    
-    logicRef.current.checkCalibration();
   }, [xr.session, scene, camera]);
-
-  useEffect(() => {
-    if (!xr.session || !logicRef.current) return;
-    if (state.calibrationData && !state.calibrationRequired && !state.showCalibration && !state.calibrationAppliedThisSession) {
-      logicRef.current.applyCalibrationFromXR(camera);
-      logicRef.current.updateState({ calibrationAppliedThisSession: true });
-    }
-  }, [xr.session, state.calibrationData, state.calibrationRequired, state.showCalibration, state.calibrationAppliedThisSession, camera]);
 
   // Load home
   useEffect(() => {
@@ -2293,7 +2064,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
     state.showNotification ||
     state.showMoveCloserPanel ||
     state.showScalePanel ||
-    state.showCalibration ||
     state.showPreciseCheckPanel;
 
   if (state.loading) {
@@ -2403,19 +2173,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
       <CatalogToggle onToggle={() => logic.handleToggleUI()} />
       <ControlPanelToggle onToggle={() => logic.handleToggleControlPanel()} />
 
-      {/* Calibration Panel - shown BEFORE instructions when calibration is needed */}
-      <HeadLockedUI distance={1.6} verticalOffset={0} enabled={state.showCalibration}>
-        <VRCalibrationPanel
-          show={state.showCalibration}
-          step={state.calibrationStep}
-          homeId={homeId}
-          isRecalibration={state.isRecalibration}
-          onConfirmPosition={() => logic.handleCalibrationStep(camera)}
-          onSkip={() => logic.skipCalibration()}
-          onRecalibrate={() => logic.updateState({ calibrationStep: 'positioning' })}
-        />
-      </HeadLockedUI>
-
       <HeadLockedUI distance={1.6} verticalOffset={0} enabled={state.showInstructions}>
         <VRInstructionPanel 
           show={state.showInstructions} 
@@ -2442,7 +2199,6 @@ export function SceneContent({ homeId, digitalHome }: SceneContentProps) {
           onHelp={() => logic.handleHelp()}
           onBack={() => logic.handleBackToHome(xrStore)}
           onLogout={() => logic.handleLogout()}
-          onRecalibrate={() => logic.startRecalibration()}
           saving={state.saving}
           onClose={() => logic.updateState({ showControlPanel: false })}
         />

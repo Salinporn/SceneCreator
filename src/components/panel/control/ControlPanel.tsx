@@ -8,7 +8,6 @@ export function VRControlPanel({
   onHelp,
   onBack,
   onLogout,
-  onRecalibrate,
   saving = false,
 }: {
   show: boolean;
@@ -16,7 +15,6 @@ export function VRControlPanel({
   onHelp: () => void;
   onBack: () => void;
   onLogout: () => void;
-  onRecalibrate?: () => void;
   saving?: boolean;
   onClose: () => void;
 }) {
@@ -25,7 +23,7 @@ export function VRControlPanel({
   if (!show) return null;
 
   const panelWidth = 0.6;
-  const panelHeight = 0.95;
+  const panelHeight = 0.8;
   const buttonWidth = 0.45;
   const buttonHeight = 0.1;
 
@@ -188,53 +186,8 @@ export function VRControlPanel({
         </mesh>
       </group>
 
-      {/* Recalibrate Button */}
-      {onRecalibrate && (
-        <>
-          <group position={[0, -0.29, 0.01]}>
-            <mesh
-              onPointerEnter={(e) => {
-                e.stopPropagation();
-                setHoveredButton("recalibrate");
-              }}
-              onPointerLeave={(e) => {
-                e.stopPropagation();
-                setHoveredButton(null);
-              }}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                onRecalibrate();
-              }}
-            >
-              <RoundedPlane width={buttonWidth} height={buttonHeight} radius={0.03} />
-              <meshStandardMaterial
-                color={hoveredButton === "recalibrate" ? "#FCD34D" : "#F59E0B"}
-                emissive={hoveredButton === "recalibrate" ? "#F59E0B" : "#F59E0B"}
-                emissiveIntensity={hoveredButton === "recalibrate" ? 0.5 : 0.3}
-              />
-            </mesh>
-            <Text
-              position={[0, 0, 0.01]}
-              fontSize={0.035}
-              color="#334155"
-              anchorX="center"
-              anchorY="middle"
-              fontWeight={550}
-            >
-              Recalibrate Room
-            </Text>
-          </group>
-
-          <group position={[0, -0.305, 0]}>
-            <mesh>
-              <ButtonBackground width={buttonWidth} height={buttonHeight} radius={0.03} colorTop="#000000" colorBottom="#000000" opacity={0.15} />
-            </mesh>
-          </group>
-        </>
-      )}
-
       {/* Logout Button */}
-      <group position={[0, onRecalibrate ? -0.44 : -0.29, 0.01]}>
+      <group position={[0, -0.29, 0.01]}>
         <mesh
           onPointerEnter={(e) => {
             e.stopPropagation();
@@ -268,7 +221,7 @@ export function VRControlPanel({
         </Text>
       </group>
 
-      <group position={[0, onRecalibrate ? -0.455 : -0.305, 0]}>
+      <group position={[0, -0.305, 0]}>
         <mesh>
           <ButtonBackground width={buttonWidth} height={buttonHeight} radius={0.03} colorTop="#000000" colorBottom="#000000" opacity={0.15} />
         </mesh>

@@ -62,6 +62,13 @@ const baseSidebarItems: SidebarItemData[] = [
     color: "#F59E0B",
     description: "Personalize scene",
   },
+  {
+    id: "toggleModel",
+    icon: "👁",
+    label: "Toggle View",
+    color: "#A855F7",
+    description: "Original / Overlay",
+  },
 ];
 
 const SIDEBAR_WIDTH = 0.25;
@@ -104,9 +111,9 @@ function SidebarItem({ item, yPos, isActive, onHover, onClick, isHovered }: Side
                 ? item.color
                 : isHovered
                   ? "#334155"
-                  : "#1E293B"
+                  : "#3c5870"
             }
-            emissive={isHovered ? item.color : "#000000"}
+            emissive={isHovered ? item.color : "#ab9090"}
             emissiveIntensity={isHovered ? 0.3 : 0}
           />
         </mesh>
@@ -156,25 +163,43 @@ function SidebarItem({ item, yPos, isActive, onHover, onClick, isHovered }: Side
 interface VRSidebarProps {
   show: boolean;
   onItemSelect: (itemId: string) => void;
+  showOriginalModel?: boolean; // ✅ NEW
 }
 
 export function VRSidebar({
   show,
   onItemSelect,
+  showOriginalModel = true, // ✅ NEW
 }: VRSidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [activeItem, setActiveItem] = useState<string | null>(null);
 
   if (!show) return null;
 
-  const sidebarItems: SidebarItemData[] = [...baseSidebarItems];
+  const sidebarItems: SidebarItemData[] = baseSidebarItems.map((item) => {
+  if (item.id === "toggleModel") {
+    return {
+      ...item,
+      icon: showOriginalModel ? "◎" : "●",   // ◎ = original, ● = overlay
+      label: showOriginalModel ? "Show Overlay" : "Show Original",
+    };
+  }
+  return item;
+});
 
   const handleItemClick = (itemId: string) => {
+    if (itemId === "toggleModel") {
+    // Don't set as active — it's a stateless toggle action
+    onItemSelect(itemId);
+    return;
+  }
     setActiveItem(itemId);
     onItemSelect(itemId);
   };
 
-  const sidebarHeight = 0.25 + sidebarItems.length * 0.25;
+  
+
+  const sidebarHeight = 0.2 + sidebarItems.length * 0.18;
 
   return (
     <group position={[0.01, 0, 0]}>
@@ -184,8 +209,8 @@ export function VRSidebar({
           width={SIDEBAR_WIDTH}
           height={sidebarHeight}
           radius={0.02}
-          color1="#1E293B"
-          color2="#0F172A"
+          color1="#dee9f4"
+          color2="#d7e3f2"
           opacity={0.85}
         />
       </mesh>
@@ -195,7 +220,7 @@ export function VRSidebar({
         <SidebarItem
           key={item.id}
           item={item}
-          yPos={0.8 - index * 0.25}
+          yPos={0.6 - index * 0.18}
           isActive={activeItem === item.id}
           isHovered={hoveredItem === item.id}
           onHover={setHoveredItem}
@@ -205,11 +230,11 @@ export function VRSidebar({
 
       {sidebarItems.map((_, index) => {
         if (index === sidebarItems.length - 1) return null;
-        const yPos = 0.5 - index * 0.25 - 0.125;
+        const yPos = 0.5 - index * 0.18 - 0.1;
         return (
           <mesh key={`divider-${index}`} position={[SIDEBAR_CENTER_X, yPos, 0]}>
             <planeGeometry args={[0.1, 0.002]} />
-            <meshBasicMaterial color="#334155" opacity={0.5} transparent />
+            <meshBasicMaterial color="#3c5870" opacity={0} transparent />
           </mesh>
         );
       })}

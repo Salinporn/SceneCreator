@@ -54,6 +54,10 @@ function isWallpaperEntry(item: Record<string, unknown>): boolean {
   );
 }
 
+function hasWhiteboardImage(item: Record<string, unknown>): boolean {
+  return typeof item.whiteboard_image === "string";
+}
+
 export async function compressWallpaperEntriesInDeployedItems(
   deployedItems: Record<string, unknown>,
   options?: { maxDimension?: number; quality?: number },
@@ -68,13 +72,23 @@ export async function compressWallpaperEntriesInDeployedItems(
       const raw = out[key];
       if (!raw || typeof raw !== "object" || Array.isArray(raw)) return;
       const item = raw as Record<string, unknown>;
-      if (!isWallpaperEntry(item)) return;
 
-      const image = item.image;
-      if (typeof image !== "string" || image.length < 500) return;
+      if (isWallpaperEntry(item)) {
+        const image = item.image;
+        if (typeof image !== "string" || image.length < 500) return;
 
-      const compressed = await compressImageDataUrl(image, maxDimension, quality);
-      out[key] = { ...item, image: compressed };
+        const compressed = await compressImageDataUrl(image, maxDimension, quality);
+        out[key] = { ...item, image: compressed };
+        return;
+      }
+
+      if (hasWhiteboardImage(item)) {
+        const wb = item.whiteboard_image;
+        if (typeof wb !== "string" || wb.length < 500) return;
+
+        const compressed = await compressImageDataUrl(wb, maxDimension, quality);
+        out[key] = { ...item, whiteboard_image: compressed };
+      }
     }),
   );
 

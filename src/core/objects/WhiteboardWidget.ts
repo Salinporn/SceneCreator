@@ -78,6 +78,7 @@ export class WhiteboardWidget extends FurnitureItem {
     this.boardMesh.position.z = 0.01;
     this.boardMesh.userData.whiteboardId = this.id;
     this.boardMesh.userData.whiteboard = this;
+    this.boardMesh.raycast = (): void => {};
     this.modelGroup.add(this.boardMesh);
 
     frameGeo.computeBoundingBox();
@@ -88,24 +89,33 @@ export class WhiteboardWidget extends FurnitureItem {
   getBoardMesh(): THREE.Mesh | null {
     return this.boardMesh;
   }
-  
-  worldPointToCanvas(worldPoint: THREE.Vector3): { u: number; v: number } | null {
+
+  worldPointToBoardUv(worldPoint: THREE.Vector3): THREE.Vector2 | null {
     if (!this.boardMesh) return null;
+    this.boardMesh.updateWorldMatrix(true, true);
     const invWorld = new THREE.Matrix4().copy(this.boardMesh.matrixWorld).invert();
     const local = worldPoint.clone().applyMatrix4(invWorld);
+    local.z = 0;
     const halfW = BOARD_WIDTH / 2;
     const halfH = BOARD_HEIGHT / 2;
-    if (Math.abs(local.x) > halfW || Math.abs(local.y) > halfH) return null;
+    local.x = THREE.MathUtils.clamp(local.x, -halfW, halfW);
+    local.y = THREE.MathUtils.clamp(local.y, -halfH, halfH);
     const u = local.x / BOARD_WIDTH + 0.5;
-    const v = 1 - (local.y / BOARD_HEIGHT + 0.5);
-    return { u, v };
+    const v = local.y / BOARD_HEIGHT + 0.5;
+    return new THREE.Vector2(u, v);
   }
 
-  drawAt(worldPoint: THREE.Vector3, tool: WhiteboardTool): void {
-    const uv = this.worldPointToCanvas(worldPoint);
-    if (!uv || !this.ctx || !this.drawTexture) return;
-    const x = uv.u * CANVAS_WIDTH;
-    const y = uv.v * CANVAS_HEIGHT;
+  drawAt(
+    worldPoint: THREE.Vector3 | null,
+    tool: WhiteboardTool,
+    geometryUv?: THREE.Vector2 | null,
+  ): void {
+    const geomUv =
+      geometryUv?.clone() ??
+      (worldPoint ? this.worldPointToBoardUv(worldPoint) : null);
+    if (!geomUv || !this.ctx || !this.drawTexture) return;
+    const x = THREE.MathUtils.clamp(geomUv.x, 0, 1) * CANVAS_WIDTH;
+    const y = (1 - THREE.MathUtils.clamp(geomUv.y, 0, 1)) * CANVAS_HEIGHT;
 
     if (tool === 'pen') {
       this.ctx.strokeStyle = '#000000';
@@ -116,6 +126,10 @@ export class WhiteboardWidget extends FurnitureItem {
         const dx = x - this.lastDrawPoint.x;
         const dy = y - this.lastDrawPoint.y;
         const dist = Math.hypot(dx, dy);
+        if (dist < 0.35) {
+          this.drawTexture.needsUpdate = true;
+          return;
+        }
         const stepPx = 4;
         if (dist > stepPx) {
           const steps = Math.ceil(dist / stepPx);
@@ -164,6 +178,36 @@ export class WhiteboardWidget extends FurnitureItem {
     this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     this.lastDrawPoint = null;
     this.drawTexture.needsUpdate = true;
+  }
+
+  applySerializedImage(dataUrl: string): void {
+    if (!this.ctx || !this.canvas || !this.drawTexture || !dataUrl) return;
+    const img = new Image();
+    img.onload = () => {
+      if (!this.ctx || !this.drawTexture) return;
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      this.ctx.drawImage(img, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      this.drawTexture.needsUpdate = true;
+    };
+    img.src = dataUrl;
+  }
+
+  override serialize(): Record<string, unknown> {
+    const base = super.serialize();
+    let whiteboard_image: string | undefined;
+    try {
+      if (this.canvas) {
+        whiteboard_image = this.canvas.toDataURL('image/png');
+      }
+    } catch {
+      // nothing
+    }
+    return {
+      ...base,
+      widget_type: 'whiteboard',
+      ...(whiteboard_image ? { whiteboard_image } : {}),
+    };
   }
 
   override dispose(): void {

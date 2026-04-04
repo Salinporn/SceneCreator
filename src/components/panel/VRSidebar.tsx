@@ -160,6 +160,7 @@ interface VRSidebarProps {
   show: boolean;
   onItemSelect: (itemId: string) => void;
   activeItemId?: string | null;
+  visibleItemIds?: string[];
   hiddenItemIds?: string[];
   extraItems?: SidebarItemData[];
 }
@@ -169,6 +170,7 @@ export function VRSidebar({
   onItemSelect,
   extraItems = [],
   activeItemId,
+  visibleItemIds,
   hiddenItemIds = [],
 }: VRSidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
@@ -176,9 +178,16 @@ export function VRSidebar({
   if (!show) return null;
 
   const allItems = [...baseSidebarItems, ...extraItems];
-  const sidebarItems: SidebarItemData[] = hiddenItemIds.length > 0
-    ? allItems.filter((item) => !hiddenItemIds.includes(item.id))
-    : allItems;
+  let sidebarItems: SidebarItemData[];
+  if (visibleItemIds && visibleItemIds.length > 0) {
+    sidebarItems = visibleItemIds
+      .map((id) => allItems.find((item) => item.id === id))
+      .filter((item): item is SidebarItemData => item != null);
+  } else if (hiddenItemIds.length > 0) {
+    sidebarItems = allItems.filter((item) => !hiddenItemIds.includes(item.id));
+  } else {
+    sidebarItems = allItems;
+  }
 
   const activeItem = activeItemId !== undefined ? activeItemId : internalActiveItem;
 

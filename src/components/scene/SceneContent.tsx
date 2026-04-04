@@ -3,8 +3,8 @@ import * as React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Environment, PerspectiveCamera, OrbitControls } from "@react-three/drei";
-import { useXRStore, useXR } from "@react-three/xr";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useXRStore, useXR, isXRInputSourceState } from "@react-three/xr";
+import { createPortal, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { CatalogToggle } from "../panel/furniture/FurnitureCatalogToggle";
 import { VRInstructionPanel } from "../panel/VRInstructionPanel";
@@ -60,54 +60,6 @@ function getBuiltInWidgetType(itemData: {
   const name = itemData.name?.toLowerCase();
   if (!name || !BUILTIN_WIDGET_NAMES.includes(name as any)) return null;
   return name as (typeof BUILTIN_WIDGET_NAMES)[number];
-}
-
-function WhiteboardHitTarget({
-  boardMesh,
-  isSelected,
-  onSelect,
-  onPointerMove,
-  onPointerLeave,
-}: {
-  boardMesh: THREE.Mesh;
-  isSelected: boolean;
-  onSelect: () => void;
-  onPointerMove: (point: THREE.Vector3) => void;
-  onPointerLeave: () => void;
-}) {
-  const groupRef = useRef<THREE.Group>(null);
-  useFrame(() => {
-    if (!groupRef.current || !boardMesh) return;
-    groupRef.current.position.setFromMatrixPosition(boardMesh.matrixWorld);
-    groupRef.current.quaternion.setFromRotationMatrix(boardMesh.matrixWorld);
-    groupRef.current.scale.setFromMatrixScale(boardMesh.matrixWorld);
-  });
-  return (
-    <group ref={groupRef}>
-      <mesh
-        onPointerDown={(e: any) => {
-          e.stopPropagation();
-          onSelect();
-        }}
-        onClick={(e: any) => {
-          e.stopPropagation();
-          onSelect();
-        }}
-        onPointerMove={(e: any) => {
-          e.stopPropagation();
-          if (isSelected) onPointerMove(e.point.clone());
-        }}
-        onPointerLeave={() => onPointerLeave()}
-      >
-        <planeGeometry args={[1.0, 0.6]} />
-        <meshBasicMaterial
-          visible={false}
-          side={THREE.DoubleSide}
-          depthWrite={false}
-        />
-      </mesh>
-    </group>
-  );
 }
 
 function FakeVRPassthroughBlocker({ enabled }: { enabled: boolean }) {
@@ -247,7 +199,9 @@ class SceneContentLogic {
   public renderer: THREE.WebGLRenderer | null = null;
   private lastFrameWhiteboardDrawing = false;
   public lastWhiteboardPointerPoint: THREE.Vector3 | null = null;
+  public lastWhiteboardPointerUv: THREE.Vector2 | null = null;
   public lastWhiteboardPointerId: string | null = null;
+  public lastWhiteboardPointerInputSource: XRInputSource | null = null;
 
   public pendingMove: [number, number, number] | null = null;
   public currentAABBPosition: [number, number, number] | null = null;
@@ -869,6 +823,12 @@ class SceneContentLogic {
               maybeMountWallIfCloseToBoundary(furniture, interp.position);
 
               await this.sceneManager.addFurniture(furniture);
+              if (widgetType === "whiteboard") {
+                const wbImage = itemData.whiteboard_image;
+                if (typeof wbImage === "string" && wbImage.length > 0) {
+                  (furniture as WhiteboardWidget).applySerializedImage(wbImage);
+                }
+              }
               if (sd) {
                 this.sceneManager.registerDeployedSpatialSnapshot(
                   itemId,
@@ -1804,7 +1764,8 @@ class SceneContentLogic {
         showScalePanel: false,
         showTexturePanel: false,
         showFurniture: false,
-        showSidebar: false,
+        showControlPanel: false,
+        showSidebar: true,
         sidebarActiveItem: null,
       });
     } else {
@@ -1842,7 +1803,13 @@ class SceneContentLogic {
   }
 
   handleSidebarItemSelect(itemId: string): void {
-    if (this.state.experienceMode) return;
+    if (
+      this.state.experienceMode &&
+      itemId !== "settings" &&
+      itemId !== "avatar"
+    ) {
+      return;
+    }
 
     if (this.state.sidebarActiveItem === itemId) {
     this.updateState({
@@ -2480,7 +2447,6 @@ class SceneContentLogic {
           showSlider: true,
           selectedItemPlacementMode: "floor",
         });
-        this.showNotificationMessage("Weather widget added!", "success");
       });
       return;
     }
@@ -2846,9 +2812,10 @@ class SceneContentLogic {
   handleSelectWhiteboardInExperience(id: string): void {
     const furniture = this.sceneManager?.getFurniture(id);
     if (!furniture || furniture.getMetadata().type !== "Whiteboard") return;
+    const sameBoard = this.state.experienceWhiteboardId === id;
     this.updateState({
       experienceWhiteboardId: id,
-      whiteboardTool: "pen",
+      ...(sameBoard ? {} : { whiteboardTool: "pen" }),
     });
   }
 
@@ -2877,10 +2844,17 @@ class SceneContentLogic {
     wb?.clear?.();
   }
 
-  recordWhiteboardPointerHit(whiteboardId: string, worldPoint: THREE.Vector3): void {
+  recordWhiteboardPointerHit(
+    whiteboardId: string,
+    worldPoint: THREE.Vector3,
+    inputSource: XRInputSource | null,
+    geometryUv?: THREE.Vector2 | null,
+  ): void {
     this.lastWhiteboardPointerId = whiteboardId;
     if (!this.lastWhiteboardPointerPoint) this.lastWhiteboardPointerPoint = new THREE.Vector3();
     this.lastWhiteboardPointerPoint.copy(worldPoint);
+    this.lastWhiteboardPointerInputSource = inputSource;
+    this.lastWhiteboardPointerUv = geometryUv ? geometryUv.clone() : null;
   }
 
   clearWhiteboardPointerHit(): void {
@@ -2890,6 +2864,9 @@ class SceneContentLogic {
       wb?.endStroke();
     }
     this.lastWhiteboardPointerId = null;
+    this.lastWhiteboardPointerInputSource = null;
+    this.lastWhiteboardPointerUv = null;
+    this.lastWhiteboardPointerPoint = null;
   }
 
   handleGizmoMove(axis: "x" | "y" | "z", delta: number): void {
@@ -3273,47 +3250,97 @@ class SceneContentLogic {
     if (this.state.experienceMode && wbId && this.sceneManager) {
       const wb = this.sceneManager.getFurniture(wbId) as WhiteboardWidget | undefined;
       if (wb) {
-        let drawPoint: THREE.Vector3 | null = null;
+        let drawSample: { point: THREE.Vector3; uv: THREE.Vector2 } | null = null;
+        let whiteboardPinnedHandOnly = false;
+        const boardMesh = wb.getBoardMesh?.();
+        const refSpace = this.renderer?.xr?.getReferenceSpace?.() ?? null;
+        const xrFrame =
+          frame ?? (this.renderer?.xr as THREE.WebXRManager | undefined)?.getFrame?.() ?? null;
+        const raycaster = new THREE.Raycaster();
+        const rayOrigin = new THREE.Vector3();
+        const rayDir = new THREE.Vector3();
+        const hitBoardFromInputSource = (
+          inputSource: XRInputSource,
+        ): { point: THREE.Vector3; uv: THREE.Vector2 } | null => {
+          if (!boardMesh || !xrFrame || !refSpace) return null;
+          if (inputSource.targetRayMode !== "tracked-pointer") return null;
+          const inputPose = xrFrame.getPose(inputSource.targetRaySpace, refSpace);
+          if (!inputPose) return null;
+          wb.getGroup().updateWorldMatrix(true, true);
+          const m = inputPose.transform.matrix as unknown as number[] | Float32Array;
+          rayOrigin.set(m[12], m[13], m[14]);
+          const cast = (): { point: THREE.Vector3; uv: THREE.Vector2 } | null => {
+            raycaster.set(rayOrigin, rayDir);
+            const hits = raycaster.intersectObject(boardMesh, true);
+            if (hits.length === 0) return null;
+            const h = hits[0];
+            const uv =
+              h.uv?.clone() ?? (h.point ? wb.worldPointToBoardUv(h.point) : null);
+            if (!uv) return null;
+            return { point: h.point.clone(), uv };
+          };
+          rayDir.set(-m[8], -m[9], -m[10]);
+          if (rayDir.lengthSq() < 1e-12) return null;
+          rayDir.normalize();
+          let hit = cast();
+          if (hit) return hit;
+          rayDir.set(m[8], m[9], m[10]);
+          if (rayDir.lengthSq() < 1e-12) return null;
+          rayDir.normalize();
+          hit = cast();
+          return hit;
+        };
+
         const usePointerHit =
           this.lastWhiteboardPointerId === wbId && this.lastWhiteboardPointerPoint;
         if (usePointerHit && session.inputSources) {
-          for (let i = 0; i < session.inputSources.length; i++) {
-            const gamepad = session.inputSources[i]?.gamepad;
-            const trigger = gamepad?.buttons?.[0]?.pressed ?? false;
-            const grip = gamepad?.buttons?.[1]?.pressed ?? false;
-            if (trigger || grip) {
-              drawPoint = this.lastWhiteboardPointerPoint;
-              break;
-            }
-          }
-        }
-        if (!drawPoint && this.renderer?.xr && session.inputSources) {
-          const boardMesh = wb.getBoardMesh?.();
-          if (boardMesh) {
-            const raycaster = new THREE.Raycaster();
-            const origin = new THREE.Vector3();
-            const direction = new THREE.Vector3();
-            for (let i = 0; i <= 1; i++) {
-              const controller = (this.renderer as any).xr.getController?.(i);
-              if (!controller) continue;
-              const gamepad = session.inputSources[i]?.gamepad;
-              const trigger = gamepad?.buttons?.[0]?.pressed ?? false;
-              const grip = gamepad?.buttons?.[1]?.pressed ?? false;
-              if (!trigger && !grip) continue;
-              controller.getWorldPosition(origin);
-              controller.getWorldDirection(direction);
-              raycaster.set(origin, direction);
-              const hits = raycaster.intersectObject(boardMesh, true);
-              if (hits.length > 0) {
-                drawPoint = hits[0].point;
-                break;
+          const pinned = this.lastWhiteboardPointerInputSource;
+          if (pinned) {
+            const stillActive = Array.from(session.inputSources as Iterable<XRInputSource>).some(
+              (s) => s === pinned,
+            );
+            const gamepad = stillActive ? pinned.gamepad : null;
+            const triggerOnly = gamepad?.buttons?.[0]?.pressed ?? false;
+            if (triggerOnly) {
+              drawSample = hitBoardFromInputSource(pinned);
+              if (!drawSample && this.lastWhiteboardPointerPoint) {
+                wb.getGroup().updateWorldMatrix(true, true);
+                const uv =
+                  this.lastWhiteboardPointerUv?.clone() ??
+                  wb.worldPointToBoardUv(this.lastWhiteboardPointerPoint);
+                if (uv) {
+                  drawSample = { point: this.lastWhiteboardPointerPoint, uv };
+                }
+              }
+              if (drawSample) {
+                whiteboardPinnedHandOnly = true;
               }
             }
           }
         }
-        if (drawPoint) {
+        if (
+          !drawSample &&
+          !whiteboardPinnedHandOnly &&
+          this.renderer?.xr &&
+          session.inputSources &&
+          boardMesh &&
+          xrFrame &&
+          refSpace
+        ) {
+          for (const inputSource of session.inputSources as Iterable<XRInputSource>) {
+            if (inputSource.targetRayMode !== "tracked-pointer") continue;
+            const gamepad = inputSource.gamepad;
+            if (!gamepad?.buttons?.[0]?.pressed) continue;
+            const hit = hitBoardFromInputSource(inputSource);
+            if (hit) {
+              drawSample = hit;
+              break;
+            }
+          }
+        }
+        if (drawSample) {
           if (!this.lastFrameWhiteboardDrawing) wb.startStroke();
-          wb.drawAt(drawPoint, this.state.whiteboardTool);
+          wb.drawAt(drawSample.point, this.state.whiteboardTool, drawSample.uv);
           whiteboardDrawingThisFrame = true;
         } else if (this.lastFrameWhiteboardDrawing) {
           wb.endStroke();
@@ -3505,6 +3532,8 @@ export function SceneContent({ homeId, digitalHome, arModeRequested }: SceneCont
   const isARSession = sessionState.session && sessionState.mode === "immersive-ar";
   const wantsPassthroughAR = state.homeTransparent || state.showHeadTrackingAlignment || state.alignmentARModeRequested;
   const isPassthroughARMode = Boolean(isARSession) && wantsPassthroughAR;
+  const hideAvatarInSidebar =
+    isPassthroughARMode || state.immersiveSessionKind === "ar";
   const isVRMode = Boolean(isARSession) && !isPassthroughARMode && !state.legacyManualAlignment && !state.waitingForAlignmentConfirmation;
   
   useEffect(() => {
@@ -3537,6 +3566,16 @@ export function SceneContent({ homeId, digitalHome, arModeRequested }: SceneCont
   if (!logicRef.current) return null;
 
   const logic = logicRef.current;
+
+  const sampleWhiteboardPointer = (e: any, furnitureId: string) => {
+    if (!e?.point) return;
+    const ps = e.pointerState;
+    const inputSource =
+      isXRInputSourceState(ps) && ps.type === "controller" ? ps.inputSource : null;
+    const uv = e.uv?.clone() ?? null;
+    logic.recordWhiteboardPointerHit(furnitureId, e.point.clone(), inputSource, uv);
+  };
+
   const uiLocked = state.showFurniture ||
     state.showControlPanel || 
     state.showNotification ||
@@ -3666,17 +3705,41 @@ export function SceneContent({ homeId, digitalHome, arModeRequested }: SceneCont
                   onPointerMove={handlePointerMove}
                   onPointerUp={handlePointerUp}
                 />
-                {isWhiteboard && state.experienceMode && boardMesh && (
-                  <WhiteboardHitTarget
-                    boardMesh={boardMesh}
-                    isSelected={state.experienceWhiteboardId === furniture.getId()}
-                    onSelect={() => logic.handleSelectWhiteboardInExperience(furniture.getId())}
-                    onPointerMove={(point) =>
-                      logic.recordWhiteboardPointerHit(furniture.getId(), point)
-                    }
-                    onPointerLeave={() => logic.clearWhiteboardPointerHit()}
-                  />
-                )}
+                {isWhiteboard &&
+                  state.experienceMode &&
+                  boardMesh &&
+                  createPortal(
+                    <mesh
+                      onPointerDown={(e: any) => {
+                        e.stopPropagation();
+                        logic.handleSelectWhiteboardInExperience(furniture.getId());
+                        sampleWhiteboardPointer(e, furniture.getId());
+                      }}
+                      onClick={(e: any) => {
+                        e.stopPropagation();
+                        logic.handleSelectWhiteboardInExperience(furniture.getId());
+                      }}
+                      onPointerMove={(e: any) => {
+                        e.stopPropagation();
+                        if (state.experienceWhiteboardId !== furniture.getId()) return;
+                        sampleWhiteboardPointer(e, furniture.getId());
+                      }}
+                      onPointerOut={() => {
+                        if (state.experienceWhiteboardId === furniture.getId()) {
+                          logic.clearWhiteboardPointerHit();
+                        }
+                      }}
+                    >
+                      <planeGeometry args={[1.0, 0.6]} />
+                      <meshBasicMaterial
+                        transparent
+                        opacity={0}
+                        depthWrite={false}
+                        side={THREE.FrontSide}
+                      />
+                    </mesh>,
+                    boardMesh,
+                  )}
               </React.Fragment>
             );
           })}
@@ -4013,38 +4076,51 @@ export function SceneContent({ homeId, digitalHome, arModeRequested }: SceneCont
       <HeadLockedUI
         distance={1.4}
         verticalOffset={0}
-        enabled={state.showSidebar && !state.experienceMode}
+        enabled={state.showSidebar}
       >
         <group position={[-0.8, 0, 0]}>
           <VRSidebar
-            show={state.showSidebar && !state.experienceMode}
+            show={state.showSidebar}
             onItemSelect={(itemId) => logic.handleSidebarItemSelect(itemId)}
             activeItemId={state.sidebarActiveItem}
-            extraItems={
-              state.selectedItemId &&
-              logic.sceneManager?.isWallMounted(state.selectedItemId)
-                ? [
-                    {
-                      id: "wall",
-                      icon: "▤",
-                      label: "Wall",
-                      color: "#64748B",
-                      description: "Move in/out from wall",
-                    },
-                  ]
+            visibleItemIds={
+              state.experienceMode
+                ? hideAvatarInSidebar
+                  ? ["settings"]
+                  : ["settings", "avatar"]
                 : undefined
             }
-            hiddenItemIds={(() => {
-              const hidden: string[] = [];
-              if (isPassthroughARMode) hidden.push("avatar");
-              if (
-                state.selectedItemId &&
-                logic.sceneManager?.getFurniture(state.selectedItemId)?.isWallpaper?.()
-              ) {
-                hidden.push("movement", "rotation");
-              }
-              return hidden.length > 0 ? hidden : undefined;
-            })()}
+            extraItems={
+              state.experienceMode
+                ? undefined
+                : state.selectedItemId &&
+                    logic.sceneManager?.isWallMounted(state.selectedItemId)
+                  ? [
+                      {
+                        id: "wall",
+                        icon: "▤",
+                        label: "Wall",
+                        color: "#64748B",
+                        description: "Move in/out from wall",
+                      },
+                    ]
+                  : undefined
+            }
+            hiddenItemIds={
+              state.experienceMode
+                ? undefined
+                : (() => {
+                    const hidden: string[] = [];
+                    if (hideAvatarInSidebar) hidden.push("avatar");
+                    if (
+                      state.selectedItemId &&
+                      logic.sceneManager?.getFurniture(state.selectedItemId)?.isWallpaper?.()
+                    ) {
+                      hidden.push("movement", "rotation");
+                    }
+                    return hidden.length > 0 ? hidden : undefined;
+                  })()
+            }
           />
         </group>
       </HeadLockedUI>

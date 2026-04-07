@@ -69,7 +69,7 @@ export function Login() {
             <h2 style={{ color: '#1e293b', marginBottom: '0.5rem', fontSize: '1.5rem' }}>
               Authenticating
             </h2>
-            <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.95rem' }}>
+            <p style={{ color: 'rgba(0, 0, 0, 0.7)', fontSize: '0.95rem' }}>
               {message}
             </p>
           </>
@@ -93,10 +93,10 @@ export function Login() {
             <h2 style={{ color: '#1e293b', marginBottom: '0.5rem', fontSize: '1.5rem' }}>
               Success!
             </h2>
-            <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.95rem' }}>
+            <p style={{ color: '#1e293b', fontSize: '0.95rem' }}>
               {message}
             </p>
-            <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.85rem', marginTop: '1rem' }}>
+            <p style={{ color: '#1e293b', fontSize: '0.85rem', marginTop: '1rem' }}>
               Redirecting to  My Home...
             </p>
           </>
@@ -121,7 +121,7 @@ export function Login() {
             <h2 style={{ color: '#1e293b', marginBottom: '0.5rem', fontSize: '1.5rem' }}>
               Authentication Failed
             </h2>
-            <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.95rem', marginBottom: '1.5rem' }}>
+            <p style={{ color: '#1e293b', fontSize: '0.95rem', marginBottom: '1.5rem' }}>
               {message}
             </p>
             <a

@@ -708,14 +708,12 @@ export class SceneManager {
     const hasAABBCollision = this.collisionDetector.checkAABBCollisionOnly(id);
     
     if (hasAABBCollision && !skipAABBBlock) {
-      furniture.setPosition(originalPosition);
-      this.collisionDetector.updateFurnitureBox(id, furniture.getGroup(), furniture.getModelId());
       furniture.setCollision(true);
-      return { 
-        success: false, 
-        needsConfirmation: true, 
+      return {
+        success: true,
+        needsConfirmation: true,
         needsPreciseCheck: false,
-        reason: 'Close to another object' 
+        reason: 'Close to another object'
       };
     }
     

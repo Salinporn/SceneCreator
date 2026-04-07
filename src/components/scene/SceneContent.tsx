@@ -2123,7 +2123,7 @@ class SceneContentLogic {
     delta: THREE.Vector3,
   ): Promise<void> {
     if (!this.sceneManager) return;
-    if (this.state.preciseCheckInProgress || this.state.awaitingCollisionAck || this.state.showPreciseCheckPanel || this.state.showMoveCloserPanel) return;
+    if (this.state.preciseCheckInProgress || this.state.awaitingCollisionAck || this.state.showPreciseCheckPanel) return;
 
     const furniture = this.sceneManager.getFurniture(id);
     if (!furniture || furniture.isWallpaper?.()) return;
@@ -2144,9 +2144,11 @@ class SceneContentLogic {
       false,
     );
 
-    if (!result.success && result.needsConfirmation) {
-      this.pendingMove = newPos;
-      this.updateState({ showMoveCloserPanel: true });
+    if (result.success && result.needsConfirmation) {
+      if (!this.state.showMoveCloserPanel) {
+        this.pendingMove = [...currentPos] as [number, number, number];
+        this.updateState({ showMoveCloserPanel: true });
+      }
     } else if (result.success && result.needsPreciseCheck) {
       this.currentAABBPosition = newPos;
       this.updateState({ showPreciseCheckPanel: true });
@@ -2157,6 +2159,10 @@ class SceneContentLogic {
       this.currentAABBPosition = null;
     } else if (result.success && !result.needsPreciseCheck) {
       this.currentAABBPosition = null;
+      if (this.state.showMoveCloserPanel) {
+        this.updateState({ showMoveCloserPanel: false });
+        this.pendingMove = null;
+      }
       if (this.state.selectedItemId === id) {
         const updatedFurniture = this.sceneManager.getFurniture(id);
         if (updatedFurniture?.isOnWall()) {
@@ -2175,7 +2181,7 @@ class SceneContentLogic {
     deltaHorizontal: number,
   ): Promise<void> {
     if (!this.sceneManager) return;
-    if (this.state.preciseCheckInProgress || this.state.awaitingCollisionAck || this.state.showPreciseCheckPanel || this.state.showMoveCloserPanel) return;
+    if (this.state.preciseCheckInProgress || this.state.awaitingCollisionAck || this.state.showPreciseCheckPanel) return;
 
     const furniture = this.sceneManager.getFurniture(id);
     if (!furniture || !furniture.isOnWall()) return;
@@ -2187,10 +2193,12 @@ class SceneContentLogic {
       deltaHorizontal,
     );
 
-    if (!result.success && result.needsConfirmation) {
-      const newPos = furniture.moveAlongWall(deltaVertical, deltaHorizontal);
-      this.pendingMove = newPos;
-      this.updateState({ showMoveCloserPanel: true });
+    if (result.success && result.needsConfirmation) {
+      if (!this.state.showMoveCloserPanel) {
+        const preMovePosForWall = this.sceneManager.getLastValidPosition(id);
+        this.pendingMove = preMovePosForWall ? [...preMovePosForWall] as [number, number, number] : furniture.getPosition();
+        this.updateState({ showMoveCloserPanel: true });
+      }
     } else if (result.success && result.needsPreciseCheck) {
       const newPos = furniture.getPosition();
       this.currentAABBPosition = newPos;
@@ -2252,33 +2260,36 @@ class SceneContentLogic {
     this.pendingMove = null;
   }
 
-  async handleConfirmMoveCloser(): Promise<void> {
-    if (!this.state.selectedItemId || !this.sceneManager || !this.pendingMove)
-      return;
+  handleConfirmMoveCloser(): void {
+    if (!this.state.selectedItemId || !this.sceneManager) return;
 
-    this.updateState({ showMoveCloserPanel: false, showControlPanel: false });
+    const furniture = this.sceneManager.getFurniture(this.state.selectedItemId);
+    if (!furniture) return;
 
-    const result = await this.sceneManager.moveFurniture(
-      this.state.selectedItemId,
-      this.pendingMove,
-      true,
-      false,
-    );
-
-    if (result.success && result.needsPreciseCheck) {
-      this.currentAABBPosition = this.pendingMove;
-      this.pendingMove = null;
-      this.updateState({ showPreciseCheckPanel: true });
-    }
-    if (result.success) {
-      this.sceneManager.refreshDeployedSpatialSnapshotFromLive(
-        this.state.selectedItemId,
-      );
-    }
+    this.currentAABBPosition = furniture.getPosition();
+    this.updateState({ showMoveCloserPanel: false, showPreciseCheckPanel: true, showControlPanel: false });
   }
 
   handleCancelMoveCloser(): void {
-    this.updateState({ showMoveCloserPanel: false });
+    if (this.state.selectedItemId && this.sceneManager && this.pendingMove) {
+      const furniture = this.sceneManager.getFurniture(this.state.selectedItemId);
+      if (furniture) {
+        furniture.setPosition(this.pendingMove);
+        const collisionDetector = this.sceneManager.getCollisionDetector();
+        collisionDetector.updateFurnitureBox(
+          this.state.selectedItemId,
+          furniture.getGroup(),
+          furniture.getModelId(),
+        );
+        furniture.setCollision(false);
+        this.sceneManager.refreshDeployedSpatialSnapshotFromLive(this.state.selectedItemId);
+        this.updateState({ showMoveCloserPanel: false, gizmoPosition: this.pendingMove });
+      } else {
+        this.updateState({ showMoveCloserPanel: false });
+      }
+    } else {
+      this.updateState({ showMoveCloserPanel: false });
+    }
     this.pendingMove = null;
   }
 
@@ -2305,11 +2316,27 @@ class SceneContentLogic {
       );
 
       if (!result.success) {
+        if (this.pendingMove) {
+          const furniture = this.sceneManager.getFurniture(this.state.selectedItemId);
+          if (furniture) {
+            furniture.setPosition(this.pendingMove);
+            const collisionDetector = this.sceneManager.getCollisionDetector();
+            collisionDetector.updateFurnitureBox(
+              this.state.selectedItemId,
+              furniture.getGroup(),
+              furniture.getModelId(),
+            );
+            furniture.setCollision(false);
+            this.sceneManager.refreshDeployedSpatialSnapshotFromLive(this.state.selectedItemId);
+            this.updateState({ gizmoPosition: this.pendingMove });
+          }
+        }
         this.showNotificationMessage(
           "⚠️ Precise overlap detected! Furniture moved back to safe position.",
           "error",
         );
         this.currentAABBPosition = null;
+        this.pendingMove = null;
       } else {
         this.sceneManager.refreshDeployedSpatialSnapshotFromLive(
           this.state.selectedItemId,
@@ -2318,6 +2345,7 @@ class SceneContentLogic {
           "✅ Position validated! Furniture can stay here.",
           "success",
         );
+        this.pendingMove = null;
       }
     } catch (error) {
       console.error("Error during precise collision check:", error);
@@ -2333,15 +2361,10 @@ class SceneContentLogic {
   handleCancelPreciseCheck(): void {
     if (!this.state.selectedItemId || !this.sceneManager) return;
 
-    const lastValid = this.sceneManager.getLastValidPosition(
-      this.state.selectedItemId,
-    );
-    if (lastValid) {
-      const furniture = this.sceneManager.getFurniture(
-        this.state.selectedItemId,
-      );
+    if (this.pendingMove) {
+      const furniture = this.sceneManager.getFurniture(this.state.selectedItemId);
       if (furniture) {
-        furniture.setPosition(lastValid);
+        furniture.setPosition(this.pendingMove);
         const collisionDetector = this.sceneManager.getCollisionDetector();
         collisionDetector.updateFurnitureBox(
           this.state.selectedItemId,
@@ -2350,13 +2373,14 @@ class SceneContentLogic {
         );
         furniture.setCollision(false);
       }
-      this.sceneManager.refreshDeployedSpatialSnapshotFromLive(
-        this.state.selectedItemId,
-      );
+      this.sceneManager.refreshDeployedSpatialSnapshotFromLive(this.state.selectedItemId);
+      this.updateState({ showPreciseCheckPanel: false, gizmoPosition: this.pendingMove });
+    } else {
+      this.updateState({ showPreciseCheckPanel: false });
     }
 
-    this.updateState({ showPreciseCheckPanel: false });
     this.currentAABBPosition = null;
+    this.pendingMove = null;
   }
 
   handleSelectFurniture(f: any, camera: THREE.Camera): void {
@@ -2922,11 +2946,19 @@ class SceneContentLogic {
         sceneManager
           .moveWallFurniture(selectedId, deltaVertical, deltaHorizontal, deltaInOut)
           .then((result) => {
-            if (!result.success) {
-              if (result.needsConfirmation) {
-                this.pendingMove = optimisticPos;
+            if (result.needsConfirmation) {
+              if (!this.state.showMoveCloserPanel) {
+                this.pendingMove = revertPos;
                 this.updateState({ showMoveCloserPanel: true });
               }
+              const updated = sceneManager.getFurniture(selectedId);
+              if (updated) {
+                this.updateState({ gizmoPosition: updated.getPosition() });
+              }
+              return;
+            }
+
+            if (!result.success) {
               if (result.needsUnmountConfirm) {
                 this.updateState({ showUnmountPanel: true });
               }
@@ -2954,11 +2986,19 @@ class SceneContentLogic {
     sceneManager
       .moveFurniture(selectedId, optimisticPos, false, false)
       .then((result) => {
-        if (!result.success) {
-          if (result.needsConfirmation) {
-            this.pendingMove = optimisticPos;
+        if (result.needsConfirmation) {
+          if (!this.state.showMoveCloserPanel) {
+            this.pendingMove = revertPos;
             this.updateState({ showMoveCloserPanel: true });
           }
+          const updated = sceneManager.getFurniture(selectedId);
+          if (updated) {
+            this.updateState({ gizmoPosition: updated.getPosition() });
+          }
+          return;
+        }
+
+        if (!result.success) {
           if (result.needsUnmountConfirm) {
             this.updateState({ showUnmountPanel: true });
           }
@@ -2968,7 +3008,13 @@ class SceneContentLogic {
 
         const updated = sceneManager.getFurniture(selectedId);
         if (updated) {
-          this.updateState({ gizmoPosition: updated.getPosition() });
+          const pos = updated.getPosition();
+          if (this.state.showMoveCloserPanel) {
+            this.updateState({ showMoveCloserPanel: false, gizmoPosition: pos });
+            this.pendingMove = null;
+          } else {
+            this.updateState({ gizmoPosition: pos });
+          }
         }
       })
       .catch((err) => {
@@ -3958,8 +4004,8 @@ export function SceneContent({ homeId, digitalHome, arModeRequested }: SceneCont
           onConfirm={() => logic.handleConfirmMoveCloser()}
           onCancel={() => logic.handleCancelMoveCloser()}
           isChecking={false}
-          title="Move Furniture Closer?"
-          message="The furniture is close to another object. Do you want to move it closer?"
+          title="Initialize Collision Detection?"
+          message="The furniture is close to another object. Do you want to check for its collision?"
         />
       </HeadLockedUI>
       <HeadLockedUI
@@ -3987,7 +4033,7 @@ export function SceneContent({ homeId, digitalHome, arModeRequested }: SceneCont
           onCancel={() => logic.handleCancelPreciseCheck()}
           isChecking={state.preciseCheckInProgress}
           title="Use precise collision detection?"
-          message="Run precise API check to verify overlap? (Click No to move back to safe position)"
+          message="Run precise API check to verify overlap? You won't be able to move item until you answer this question."
         />
       </HeadLockedUI>
       <HeadLockedUI

@@ -36,7 +36,7 @@ export function NotAuthorized() {
         <h1 style={{ color: 'black', marginBottom: '1rem', fontSize: '2rem' }}>
           Access Denied
         </h1>
-        <p style={{ color: '#22282C', fontSize: '1rem', marginBottom: '2rem' }}>
+        <p style={{ color: '#ffffff', fontSize: '1rem', marginBottom: '2rem' }}>
           <>
             You need to be signed in to access this page.
             <br />

@@ -52,7 +52,7 @@ export function VRControlPanel({
         <GradientBackground width={panelWidth} height={panelHeight} radius={0.1} color1="#EAF4FA" color2="#F0F2F5" opacity={0.7} />
       </mesh>
 
-      {/** Background Shadow */}
+      {/* Background Shadow */}
       <mesh position={[0, 0, -0.03]}>
         <RoundedPlane width={panelWidth} height={panelHeight} radius={0.1} />
         <meshStandardMaterial

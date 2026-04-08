@@ -2895,6 +2895,7 @@ class SceneContentLogic {
 
   handleGizmoMove(axis: "x" | "y" | "z", delta: number): void {
     if (!this.state.selectedItemId || !this.sceneManager) return;
+    if (this.state.preciseCheckInProgress || this.state.awaitingCollisionAck || this.state.showPreciseCheckPanel) return;
     const sceneManager = this.sceneManager;
 
     const selectedId = this.state.selectedItemId;
@@ -2983,14 +2984,28 @@ class SceneContentLogic {
       }
     }
 
+    const isInAABBZone = this.currentAABBPosition !== null;
+
     sceneManager
-      .moveFurniture(selectedId, optimisticPos, false, false)
+      .moveFurniture(selectedId, optimisticPos, isInAABBZone, false)
       .then((result) => {
-        if (result.needsConfirmation) {
+        if (result.success && result.needsConfirmation) {
+          // Entered AABB zone — show panel, keep furniture at new position
           if (!this.state.showMoveCloserPanel) {
             this.pendingMove = revertPos;
             this.updateState({ showMoveCloserPanel: true });
           }
+          const updated = sceneManager.getFurniture(selectedId);
+          if (updated) {
+            this.updateState({ gizmoPosition: updated.getPosition() });
+          }
+          return;
+        }
+
+        if (result.success && result.needsPreciseCheck) {
+          // Inside AABB zone (skipAABBBlock was true) — prompt for precise check
+          this.currentAABBPosition = optimisticPos;
+          this.updateState({ showPreciseCheckPanel: true });
           const updated = sceneManager.getFurniture(selectedId);
           if (updated) {
             this.updateState({ gizmoPosition: updated.getPosition() });
@@ -3006,10 +3021,13 @@ class SceneContentLogic {
           return;
         }
 
+        // Successful move to safe (non-AABB) position
+        void sceneManager.refreshDeployedSpatialSnapshotFromLive(selectedId);
         const updated = sceneManager.getFurniture(selectedId);
         if (updated) {
           const pos = updated.getPosition();
           if (this.state.showMoveCloserPanel) {
+            // Furniture moved back out of AABB zone — dismiss the panel
             this.updateState({ showMoveCloserPanel: false, gizmoPosition: pos });
             this.pendingMove = null;
           } else {
